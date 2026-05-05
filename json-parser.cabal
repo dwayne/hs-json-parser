@@ -8,8 +8,9 @@ library
   hs-source-dirs: src
 
   exposed-modules:
-    Lexer
+    Sandbox
 
   build-depends:
     base,
-    parsec
+    megaparsec,
+    text
