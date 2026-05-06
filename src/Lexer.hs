@@ -1,12 +1,37 @@
-module Lexer (ws) where
+module Lexer (Sign(..), sign, ws) where
 
+import Control.Applicative ((<|>))
 import Control.Monad (void)
 import Data.Text (Text)
 import Data.Void (Void)
-import Text.Megaparsec (Parsec, takeWhileP)
+import Text.Megaparsec ((<?>), Parsec, takeWhileP)
+import Text.Megaparsec.Char (char)
 
 
 type Parser = Parsec Void Text
+
+
+data Sign
+  = Plus
+  | Minus
+  deriving (Eq, Show)
+
+
+sign :: Parser (Maybe Sign)
+sign =
+  --
+  -- sign
+  --     ""
+  --     '+'
+  --     '-'
+  --
+  plus <|> minus <|> pure Nothing
+  where
+    plus :: Parser (Maybe Sign)
+    plus = Just Plus <$ char '+' <?> "plus sign"
+
+    minus :: Parser (Maybe Sign)
+    minus = Just Minus <$ char '-' <?> "minus sign"
 
 
 ws :: Parser ()
