@@ -31,7 +31,8 @@ test-suite tests
     hspec,
     hspec-megaparsec,
     json-parser,
-    megaparsec
+    megaparsec,
+    text
 
   build-tool-depends:
     hspec-discover:hspec-discover
