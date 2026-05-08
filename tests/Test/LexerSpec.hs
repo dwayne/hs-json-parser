@@ -14,6 +14,7 @@ spec :: Spec
 spec =
   describe "Lexer" $ do
     wsSpec
+    numberSpec
     signedNaturalSpec
     fractionalPartSpec
     exponentPartSpec
@@ -34,6 +35,41 @@ wsSpec =
 
       -- more than one
       parseTillEnd L.ws `shouldSucceedOn` " \n\r\t\t\r\n "
+
+
+numberSpec :: Spec
+numberSpec =
+  describe "number" $ do
+    it "parses a number" $ do
+      -- integer, no fraction, no exponent
+      parseTillEnd L.number "0" `shouldParse` L.Number (L.SignedNatural L.Plus "0") Nothing Nothing
+      parseTillEnd L.number "-0" `shouldParse` L.Number (L.SignedNatural L.Minus "0") Nothing Nothing
+      parseTillEnd L.number "5" `shouldParse` L.Number (L.SignedNatural L.Plus "5") Nothing Nothing
+      parseTillEnd L.number "-5" `shouldParse` L.Number (L.SignedNatural L.Minus "5") Nothing Nothing
+
+      -- integer, fraction, no exponent
+      parseTillEnd L.number "0.5" `shouldParse` L.Number (L.SignedNatural L.Plus "0") (Just $ L.FractionalPart "5" 1) Nothing
+      parseTillEnd L.number "10.25" `shouldParse` L.Number (L.SignedNatural L.Plus "10") (Just $ L.FractionalPart "25" 2) Nothing
+      parseTillEnd L.number "-3.0125" `shouldParse` L.Number (L.SignedNatural L.Minus "3") (Just $ L.FractionalPart "0125" 4) Nothing
+
+      -- integer, no fraction, exponent
+      parseTillEnd L.number "2E8" `shouldParse` L.Number (L.SignedNatural L.Plus "2") Nothing (Just $ L.ExponentPart L.Plus "8")
+      parseTillEnd L.number "2E+8" `shouldParse` L.Number (L.SignedNatural L.Plus "2") Nothing (Just $ L.ExponentPart L.Plus "8")
+      parseTillEnd L.number "2E-8" `shouldParse` L.Number (L.SignedNatural L.Plus "2") Nothing (Just $ L.ExponentPart L.Minus "8")
+      parseTillEnd L.number "2e8" `shouldParse` L.Number (L.SignedNatural L.Plus "2") Nothing (Just $ L.ExponentPart L.Plus "8")
+      parseTillEnd L.number "2e+8" `shouldParse` L.Number (L.SignedNatural L.Plus "2") Nothing (Just $ L.ExponentPart L.Plus "8")
+      parseTillEnd L.number "2e-8" `shouldParse` L.Number (L.SignedNatural L.Plus "2") Nothing (Just $ L.ExponentPart L.Minus "8")
+      parseTillEnd L.number "-123e-0456" `shouldParse` L.Number (L.SignedNatural L.Minus "123") Nothing (Just $ L.ExponentPart L.Minus "0456")
+
+      -- integer, fraction, exponent
+      parseTillEnd L.number "1.2e3" `shouldParse` L.Number (L.SignedNatural L.Plus "1") (Just $ L.FractionalPart "2" 1) (Just $ L.ExponentPart L.Plus "3")
+      parseTillEnd L.number "-1.2E-3" `shouldParse` L.Number (L.SignedNatural L.Minus "1") (Just $ L.FractionalPart "2" 1) (Just $ L.ExponentPart L.Minus "3")
+
+      -- expected failures
+      parseTillEnd L.number `shouldFailOn` ""
+      parseTillEnd L.number `shouldFailOn` "-"
+      parseTillEnd L.number `shouldFailOn` "1."
+      parseTillEnd L.number `shouldFailOn` ".1"
 
 
 signedNaturalSpec :: Spec

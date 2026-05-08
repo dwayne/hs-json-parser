@@ -2,6 +2,7 @@
 
 module Lexer
   ( Parser, Error
+  , Number(..), number
   , SignedNatural(..), Sign(..), signedNatural
   , FractionalPart(..), fractionalPart
   , ExponentPart(..), exponentPart
@@ -26,6 +27,10 @@ type Parser = Parsec Void Text
 type Error = ParseErrorBundle Text Void
 
 
+data Number = Number SignedNatural (Maybe FractionalPart) (Maybe ExponentPart)
+  deriving (Eq, Show)
+
+
 data SignedNatural = SignedNatural Sign Text
   deriving (Eq, Show)
 
@@ -40,6 +45,9 @@ data SignedNatural = SignedNatural Sign Text
 -- FractionalPart "5" 1 represents ["5"] * 10.0 ^^ (-1) = 5 * 10.0 ^^ (-1) = 0.5
 --
 data FractionalPart = FractionalPart Text Int
+  --
+  -- TODO: Maybe remove the length from the FractionalPart since that can be derived
+  --
   deriving (Eq, Show)
 
 
@@ -50,10 +58,16 @@ data FractionalPart = FractionalPart Text Int
 data ExponentPart = ExponentPart Sign Text
   deriving (Eq, Show)
 
+
 data Sign
   = Plus
   | Minus
   deriving (Eq, Show)
+
+
+number :: Parser Number
+number =
+  Number <$> signedNatural <*> fraction <*> exponent <?> "number"
 
 
 signedNatural :: Parser SignedNatural
