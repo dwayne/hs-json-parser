@@ -58,27 +58,27 @@ signedNaturalSpec =
   describe "signedNatural" $ do
     it "parses a signed natural number" $ do
       -- zero
-      parseTillEnd L.signedNatural "0" `shouldParse` L.SignedNatural L.Plus 0
-      parseTillEnd L.signedNatural "-0" `shouldParse` L.SignedNatural L.Minus 0
+      parseTillEnd L.signedNatural "0" `shouldParse` L.SignedNatural L.Plus "0"
+      parseTillEnd L.signedNatural "-0" `shouldParse` L.SignedNatural L.Minus "0"
 
       -- non-zero digit
-      parseTillEnd L.signedNatural "1" `shouldParse` L.SignedNatural L.Plus 1
-      parseTillEnd L.signedNatural "2" `shouldParse` L.SignedNatural L.Plus 2
-      parseTillEnd L.signedNatural "3" `shouldParse` L.SignedNatural L.Plus 3
-      parseTillEnd L.signedNatural "4" `shouldParse` L.SignedNatural L.Plus 4
-      parseTillEnd L.signedNatural "5" `shouldParse` L.SignedNatural L.Plus 5
-      parseTillEnd L.signedNatural "6" `shouldParse` L.SignedNatural L.Plus 6
-      parseTillEnd L.signedNatural "7" `shouldParse` L.SignedNatural L.Plus 7
-      parseTillEnd L.signedNatural "8" `shouldParse` L.SignedNatural L.Plus 8
-      parseTillEnd L.signedNatural "9" `shouldParse` L.SignedNatural L.Plus 9
+      parseTillEnd L.signedNatural "1" `shouldParse` L.SignedNatural L.Plus "1"
+      parseTillEnd L.signedNatural "2" `shouldParse` L.SignedNatural L.Plus "2"
+      parseTillEnd L.signedNatural "3" `shouldParse` L.SignedNatural L.Plus "3"
+      parseTillEnd L.signedNatural "4" `shouldParse` L.SignedNatural L.Plus "4"
+      parseTillEnd L.signedNatural "5" `shouldParse` L.SignedNatural L.Plus "5"
+      parseTillEnd L.signedNatural "6" `shouldParse` L.SignedNatural L.Plus "6"
+      parseTillEnd L.signedNatural "7" `shouldParse` L.SignedNatural L.Plus "7"
+      parseTillEnd L.signedNatural "8" `shouldParse` L.SignedNatural L.Plus "8"
+      parseTillEnd L.signedNatural "9" `shouldParse` L.SignedNatural L.Plus "9"
 
       -- more than one digit
-      parseTillEnd L.signedNatural "10" `shouldParse` L.SignedNatural L.Plus 10
-      parseTillEnd L.signedNatural "1234567890" `shouldParse` L.SignedNatural L.Plus 1234567890
+      parseTillEnd L.signedNatural "10" `shouldParse` L.SignedNatural L.Plus "10"
+      parseTillEnd L.signedNatural "1234567890" `shouldParse` L.SignedNatural L.Plus "1234567890"
 
       -- negative numbers
-      parseTillEnd L.signedNatural "-1" `shouldParse` L.SignedNatural L.Minus 1
-      parseTillEnd L.signedNatural "-10" `shouldParse` L.SignedNatural L.Minus 10
+      parseTillEnd L.signedNatural "-1" `shouldParse` L.SignedNatural L.Minus "1"
+      parseTillEnd L.signedNatural "-10" `shouldParse` L.SignedNatural L.Minus "10"
 
       -- expected failures
       parseTillEnd L.signedNatural `shouldFailOn` ""
@@ -94,15 +94,15 @@ fractionSpec =
       parseTillEnd L.fraction "" `shouldParse` Nothing
 
       -- one or more digits after the decimal point
-      parseTillEnd L.fraction ".5" `shouldParse` Just (L.FractionalPart 5 1)
-      parseTillEnd L.fraction ".25" `shouldParse` Just (L.FractionalPart 25 2)
-      parseTillEnd L.fraction ".125" `shouldParse` Just (L.FractionalPart 125 3)
-      parseTillEnd L.fraction ".000125" `shouldParse` Just (L.FractionalPart 125 6)
+      parseTillEnd L.fraction ".5" `shouldParse` Just (L.FractionalPart "5" 1)
+      parseTillEnd L.fraction ".25" `shouldParse` Just (L.FractionalPart "25" 2)
+      parseTillEnd L.fraction ".125" `shouldParse` Just (L.FractionalPart "125" 3)
+      parseTillEnd L.fraction ".000125" `shouldParse` Just (L.FractionalPart "000125" 6)
 
       -- zeros
-      parseTillEnd L.fraction ".0" `shouldParse` Just (L.FractionalPart 0 0)
-      parseTillEnd L.fraction ".00" `shouldParse` Just (L.FractionalPart 0 0)
-      parseTillEnd L.fraction ".0000000000" `shouldParse` Just (L.FractionalPart 0 0)
+      parseTillEnd L.fraction ".0" `shouldParse` Just (L.FractionalPart "0" 1)
+      parseTillEnd L.fraction ".00" `shouldParse` Just (L.FractionalPart "00" 2)
+      parseTillEnd L.fraction ".0000000000" `shouldParse` Just (L.FractionalPart "0000000000" 10)
 
       -- expected failures
       parseTillEnd L.signedNatural `shouldFailOn` "."

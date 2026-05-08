@@ -1,3 +1,5 @@
+{-# LANGUAGE OverloadedStrings #-}
+
 module Lexer
   ( Parser, Error
   , SignedNatural(..), Sign(..), signedNatural
@@ -22,19 +24,20 @@ type Parser = Parsec Void Text
 type Error = ParseErrorBundle Text Void
 
 
-data SignedNatural = SignedNatural Sign Natural
+data SignedNatural = SignedNatural Sign Text
   deriving (Eq, Show)
 
 
 --
--- FractionalPart n k == n * 10 ^^ (-k)
+-- FractionalPart n k represents [n] * 10.0 ^^ (-k)
+--
+-- where [n] is the natural number corresponding to n
 --
 -- For e.g.
 --
--- FractionalPart 5 1 == 5.0 * 10 ^^ (-1)
---                    == 0.5
+-- FractionalPart "5" 1 represents ["5"] * 10.0 ^^ (-1) = 5 * 10.0 ^^ (-1) = 0.5
 --
-data FractionalPart = FractionalPart Natural Int
+data FractionalPart = FractionalPart Text Int
   deriving (Eq, Show)
 
 
@@ -69,14 +72,11 @@ signedNatural =
     sign :: Parser Sign
     sign = Minus <$ char '-' <|> pure Plus <?> "sign"
 
-    zero :: Parser Natural
-    zero = 0 <$ char '0' <?> "zero"
+    zero :: Parser Text
+    zero = "0" <$ char '0' <?> "zero"
 
-    positiveNumber :: Parser Natural
-    positiveNumber = toNatural <$> oneNine <*> digits0 <?> "positive number"
-
-    toNatural :: Char -> Text -> Natural
-    toNatural ch = read . T.unpack . T.cons ch
+    positiveNumber :: Parser Text
+    positiveNumber = T.cons <$> oneNine <*> digits0 <?> "positive number"
 
     oneNine :: Parser Char
     oneNine = satisfy isOneNine <?> "non-zero digit"
@@ -108,16 +108,7 @@ fractionalPart =
   toFractionalPart <$> (char '.' *> digits1) <?> "fractional part"
   where
     toFractionalPart :: Text -> FractionalPart
-    toFractionalPart t =
-      let
-        n = read (T.unpack t)
-        k = T.length t
-      in
-      if n == 0 then
-        FractionalPart 0 0
-
-      else
-        FractionalPart n k
+    toFractionalPart t = FractionalPart t (T.length t)
 
 
 --
