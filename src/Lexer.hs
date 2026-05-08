@@ -1,6 +1,7 @@
 module Lexer
   ( Parser, Error
   , SignedNatural(..), Sign(..), signedNatural
+  , FractionalPart(..), fraction
   , sign
   , ws
   ) where
@@ -13,7 +14,7 @@ import Control.Monad (void)
 import Data.Text (Text)
 import Data.Void (Void)
 import Numeric.Natural (Natural)
-import Text.Megaparsec ((<?>), Parsec, ParseErrorBundle, satisfy, takeWhileP)
+import Text.Megaparsec ((<?>), Parsec, ParseErrorBundle, satisfy, takeWhileP, takeWhile1P)
 import Text.Megaparsec.Char (char)
 
 
@@ -22,6 +23,18 @@ type Error = ParseErrorBundle Text Void
 
 
 data SignedNatural = SignedNatural Sign Natural
+  deriving (Eq, Show)
+
+
+--
+-- FractionalPart n k == n * 10 ^^ (-k)
+--
+-- For e.g.
+--
+-- FractionalPart 5 1 == 5.0 * 10 ^^ (-1)
+--                    == 0.5
+--
+data FractionalPart = FractionalPart Natural Int
   deriving (Eq, Show)
 
 
@@ -60,7 +73,7 @@ signedNatural =
     zero = 0 <$ char '0' <?> "zero"
 
     positiveNumber :: Parser Natural
-    positiveNumber = toNatural <$> oneNine <*> digits <?> "positive number"
+    positiveNumber = toNatural <$> oneNine <*> digits0 <?> "positive number"
 
     toNatural :: Char -> Text -> Natural
     toNatural ch = read . T.unpack . T.cons ch
@@ -70,9 +83,48 @@ signedNatural =
       where
         isOneNine ch = ch /= '0' && Char.isDigit ch
 
-    digits :: Parser Text
-    digits = takeWhileP (Just "digit") Char.isDigit
+    --
+    -- zero or more digits
+    --
+    digits0 :: Parser Text
+    digits0 = takeWhileP (Just "digit") Char.isDigit
 
+
+fraction :: Parser (Maybe FractionalPart)
+fraction =
+  --
+  -- fraction
+  --   ""
+  --   '.' digits
+  --
+  optional fractionalPart
+
+
+fractionalPart :: Parser FractionalPart
+fractionalPart =
+  --
+  -- '.' digits
+  --
+  toFractionalPart <$> (char '.' *> digits1) <?> "fractional part"
+  where
+    toFractionalPart :: Text -> FractionalPart
+    toFractionalPart t =
+      let
+        n = read (T.unpack t)
+        k = T.length t
+      in
+      if n == 0 then
+        FractionalPart 0 0
+
+      else
+        FractionalPart n k
+
+
+--
+-- one or more digits
+--
+digits1 :: Parser Text
+digits1 = takeWhile1P (Just "digit") Char.isDigit
 
 
 sign :: Parser (Maybe Sign)
@@ -110,3 +162,10 @@ ws =
       || ch == '\x000A'
       || ch == '\x000D'
       || ch == '\x0009'
+
+
+-- Helpers
+
+
+optional :: Parser a -> Parser (Maybe a)
+optional p = (Just <$> p) <|> pure Nothing
