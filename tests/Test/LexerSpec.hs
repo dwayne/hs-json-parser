@@ -14,9 +14,9 @@ spec :: Spec
 spec =
   describe "Lexer" $ do
     wsSpec
-    signSpec
     signedNaturalSpec
     fractionSpec
+    exponentPartSpec
 
 
 wsSpec :: Spec
@@ -34,23 +34,6 @@ wsSpec =
 
       -- more than one
       parseTillEnd L.ws `shouldSucceedOn` " \n\r\t\t\r\n "
-
-
-signSpec :: Spec
-signSpec =
-  describe "sign" $ do
-    it "parses an optional plus or minus sign" $ do
-      -- plus sign
-      parseTillEnd L.sign "+" `shouldParse` Just L.Plus
-
-      -- minus sign
-      parseTillEnd L.sign "-" `shouldParse` Just L.Minus
-
-      -- no sign
-      parseTillEnd L.sign "" `shouldParse` Nothing
-
-      -- expected failures
-      parseTillEnd L.sign `shouldFailOn` "1"
 
 
 signedNaturalSpec :: Spec
@@ -106,6 +89,26 @@ fractionSpec =
 
       -- expected failures
       parseTillEnd L.signedNatural `shouldFailOn` "."
+
+
+exponentPartSpec :: Spec
+exponentPartSpec =
+  describe "exponentPart" $ do
+    it "parses the exponent part of a number" $ do
+      -- with E
+      parseTillEnd L.exponentPart "E12" `shouldParse` L.ExponentPart L.Plus "12"
+      parseTillEnd L.exponentPart "E+12" `shouldParse` L.ExponentPart L.Plus "12"
+      parseTillEnd L.exponentPart "E-12" `shouldParse` L.ExponentPart L.Minus "12"
+
+      -- with e
+      parseTillEnd L.exponentPart "e12" `shouldParse` L.ExponentPart L.Plus "12"
+      parseTillEnd L.exponentPart "e+12" `shouldParse` L.ExponentPart L.Plus "12"
+      parseTillEnd L.exponentPart "e-12" `shouldParse` L.ExponentPart L.Minus "12"
+
+      -- zeros
+      parseTillEnd L.exponentPart "E0" `shouldParse` L.ExponentPart L.Plus "0"
+      parseTillEnd L.exponentPart "E+00" `shouldParse` L.ExponentPart L.Plus "00"
+      parseTillEnd L.exponentPart "E-000" `shouldParse` L.ExponentPart L.Minus "000"
 
 
 -- Helpers

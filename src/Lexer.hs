@@ -4,9 +4,11 @@ module Lexer
   ( Parser, Error
   , SignedNatural(..), Sign(..), signedNatural
   , FractionalPart(..), fraction
-  , sign
+  , ExponentPart(..), exponentPart
   , ws
   ) where
+
+import Prelude hiding (exponent)
 
 import qualified Data.Char as Char
 import qualified Data.Text as T
@@ -40,6 +42,13 @@ data SignedNatural = SignedNatural Sign Text
 data FractionalPart = FractionalPart Text Int
   deriving (Eq, Show)
 
+
+--
+-- ExponentPart Plus "3" represents 10.0 ^^ 3
+-- ExponentPart Minus "3" represents 10.0 ^^ (-3)
+--
+data ExponentPart = ExponentPart Sign Text
+  deriving (Eq, Show)
 
 data Sign
   = Plus
@@ -111,28 +120,37 @@ fractionalPart =
     toFractionalPart t = FractionalPart t (T.length t)
 
 
+exponent :: Parser (Maybe ExponentPart)
+exponent =
+  --
+  -- exponent
+  --   ""
+  --   'E' sign digits
+  --   'e' sign digits
+  --
+  optional exponentPart
+
+
+exponentPart :: Parser ExponentPart
+exponentPart =
+  --
+  -- 'E' sign digits
+  -- 'e' sign digits
+  --
+  ExponentPart <$> (e *> sign) <*> digits1 <?> "exponent part"
+  where
+    e :: Parser Char
+    e = char 'E' <|> char 'e'
+
+    sign :: Parser Sign
+    sign = (Plus <$ char '+') <|> (Minus <$ char '-') <|> pure Plus <?> "sign"
+
+
 --
 -- one or more digits
 --
 digits1 :: Parser Text
 digits1 = takeWhile1P (Just "digit") Char.isDigit
-
-
-sign :: Parser (Maybe Sign)
-sign =
-  --
-  -- sign
-  --     ""
-  --     '+'
-  --     '-'
-  --
-  plus <|> minus <|> pure Nothing
-  where
-    plus :: Parser (Maybe Sign)
-    plus = Just Plus <$ char '+' <?> "plus sign"
-
-    minus :: Parser (Maybe Sign)
-    minus = Just Minus <$ char '-' <?> "minus sign"
 
 
 ws :: Parser ()
