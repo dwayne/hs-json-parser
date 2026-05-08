@@ -3,7 +3,7 @@
 module Lexer
   ( Parser, Error
   , SignedNatural(..), Sign(..), signedNatural
-  , FractionalPart(..), fraction
+  , FractionalPart(..), fractionalPart
   , ExponentPart(..), exponentPart
   , ws
   ) where

@@ -15,7 +15,7 @@ spec =
   describe "Lexer" $ do
     wsSpec
     signedNaturalSpec
-    fractionSpec
+    fractionalPartSpec
     exponentPartSpec
 
 
@@ -69,26 +69,24 @@ signedNaturalSpec =
       parseTillEnd L.signedNatural `shouldFailOn` "01"
 
 
-fractionSpec :: Spec
-fractionSpec =
-  describe "fraction" $ do
+fractionalPartSpec :: Spec
+fractionalPartSpec =
+  describe "fractionalPart" $ do
     it "parses the optional fractional part of a number" $ do
-      -- no fractional part
-      parseTillEnd L.fraction "" `shouldParse` Nothing
-
       -- one or more digits after the decimal point
-      parseTillEnd L.fraction ".5" `shouldParse` Just (L.FractionalPart "5" 1)
-      parseTillEnd L.fraction ".25" `shouldParse` Just (L.FractionalPart "25" 2)
-      parseTillEnd L.fraction ".125" `shouldParse` Just (L.FractionalPart "125" 3)
-      parseTillEnd L.fraction ".000125" `shouldParse` Just (L.FractionalPart "000125" 6)
+      parseTillEnd L.fractionalPart ".5" `shouldParse` L.FractionalPart "5" 1
+      parseTillEnd L.fractionalPart ".25" `shouldParse` L.FractionalPart "25" 2
+      parseTillEnd L.fractionalPart ".125" `shouldParse` L.FractionalPart "125" 3
+      parseTillEnd L.fractionalPart ".000125" `shouldParse` L.FractionalPart "000125" 6
 
       -- zeros
-      parseTillEnd L.fraction ".0" `shouldParse` Just (L.FractionalPart "0" 1)
-      parseTillEnd L.fraction ".00" `shouldParse` Just (L.FractionalPart "00" 2)
-      parseTillEnd L.fraction ".0000000000" `shouldParse` Just (L.FractionalPart "0000000000" 10)
+      parseTillEnd L.fractionalPart ".0" `shouldParse` L.FractionalPart "0" 1
+      parseTillEnd L.fractionalPart ".00" `shouldParse` L.FractionalPart "00" 2
+      parseTillEnd L.fractionalPart ".0000000000" `shouldParse` L.FractionalPart "0000000000" 10
 
       -- expected failures
-      parseTillEnd L.signedNatural `shouldFailOn` "."
+      parseTillEnd L.fractionalPart `shouldFailOn` ""
+      parseTillEnd L.fractionalPart `shouldFailOn` "."
 
 
 exponentPartSpec :: Spec
