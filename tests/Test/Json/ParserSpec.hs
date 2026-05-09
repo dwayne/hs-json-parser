@@ -13,30 +13,24 @@ import Text.Megaparsec (parse, eof)
 spec :: Spec
 spec =
   describe "Parser" $ do
-    wsSpec
+    jsonSpec
     numberSpec
     signedNaturalSpec
     fractionalPartSpec
     exponentPartSpec
     booleanSpec
     nullSpec
+    wsSpec
 
 
-wsSpec :: Spec
-wsSpec =
-  describe "ws" $ do
-    it "parses zero or more whitespace characters" $ do
-      -- zero
-      parseTillEnd P.ws `shouldSucceedOn` ""
-
-      -- one
-      parseTillEnd P.ws `shouldSucceedOn` " "
-      parseTillEnd P.ws `shouldSucceedOn` "\n"
-      parseTillEnd P.ws `shouldSucceedOn` "\r"
-      parseTillEnd P.ws `shouldSucceedOn` "\t"
-
-      -- more than one
-      parseTillEnd P.ws `shouldSucceedOn` " \n\r\t\t\r\n "
+jsonSpec :: Spec
+jsonSpec =
+  describe "json" $ do
+    it "parses a JSON value" $ do
+      parseTillEnd P.json "123" `shouldParse` P.JsonNumber (P.Number (P.SignedNatural P.Plus "123") Nothing Nothing)
+      parseTillEnd P.json " true" `shouldParse` P.JsonBoolean True
+      parseTillEnd P.json "false " `shouldParse` P.JsonBoolean False
+      parseTillEnd P.json " null " `shouldParse` P.JsonNull
 
 
 numberSpec :: Spec
@@ -173,6 +167,23 @@ nullSpec =
       parseTillEnd P.null `shouldFailOn` "NULL"
       parseTillEnd P.null `shouldFailOn` "Null"
       parseTillEnd P.null `shouldFailOn` "nullish"
+
+
+wsSpec :: Spec
+wsSpec =
+  describe "ws" $ do
+    it "parses zero or more whitespace characters" $ do
+      -- zero
+      parseTillEnd P.ws `shouldSucceedOn` ""
+
+      -- one
+      parseTillEnd P.ws `shouldSucceedOn` " "
+      parseTillEnd P.ws `shouldSucceedOn` "\n"
+      parseTillEnd P.ws `shouldSucceedOn` "\r"
+      parseTillEnd P.ws `shouldSucceedOn` "\t"
+
+      -- more than one
+      parseTillEnd P.ws `shouldSucceedOn` " \n\r\t\t\r\n "
 
 
 -- Helpers

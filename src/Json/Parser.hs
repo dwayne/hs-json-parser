@@ -2,6 +2,7 @@
 
 module Json.Parser
   ( Parser, Error
+  , Json(..), json
   , Number(..), number
   , SignedNatural(..), Sign(..), signedNatural
   , FractionalPart(..), fractionalPart
@@ -24,6 +25,7 @@ import Numeric.Natural (Natural)
 import Text.Megaparsec
   ( (<?>)
   , Parsec, ParseErrorBundle
+  , choice
   , notFollowedBy
   , satisfy, takeWhileP, takeWhile1P
   )
@@ -32,6 +34,13 @@ import Text.Megaparsec.Char (alphaNumChar, char, string)
 
 type Parser = Parsec Void Text
 type Error = ParseErrorBundle Text Void
+
+
+data Json
+  = JsonNumber Number
+  | JsonBoolean Bool
+  | JsonNull
+  deriving (Eq, Show)
 
 
 data Number = Number SignedNatural (Maybe FractionalPart) (Maybe ExponentPart)
@@ -69,18 +78,49 @@ data Sign
   deriving (Eq, Show)
 
 
-boolean :: Parser Bool
-boolean =
-  True <$ keyword "true" <|> False <$ keyword "false" <?> "boolean"
+json :: Parser Json
+json =
+  --
+  -- json
+  --   element
+  --
+  element
 
 
-null :: Parser ()
-null =
-  void (keyword "null") <?> "null"
+element :: Parser Json
+element =
+  --
+  -- element
+  --   ws value ws
+  --
+  ws *> value <* ws
+
+
+value :: Parser Json
+value =
+  --
+  -- value
+  --   object
+  --   array
+  --   string
+  --   number
+  --   "true"
+  --   "false"
+  --   "null"
+  --
+  choice
+    [ JsonNumber <$> number
+    , JsonBoolean <$> boolean
+    , JsonNull <$ null
+    ]
 
 
 number :: Parser Number
 number =
+  --
+  -- number
+  --   integer fraction exponent
+  --
   Number <$> signedNatural <*> fraction <*> exponent <?> "number"
 
 
@@ -171,11 +211,29 @@ exponentPart =
     sign = (Plus <$ char '+') <|> (Minus <$ char '-') <|> pure Plus <?> "sign"
 
 
---
--- one or more digits
---
 digits1 :: Parser Text
-digits1 = takeWhile1P (Just "digit") Char.isDigit
+digits1 =
+  --
+  -- one or more digits
+  --
+  takeWhile1P (Just "digit") Char.isDigit
+
+
+boolean :: Parser Bool
+boolean =
+  --
+  -- "true"
+  -- "false"
+  --
+  True <$ keyword "true" <|> False <$ keyword "false" <?> "boolean"
+
+
+null :: Parser ()
+null =
+  --
+  -- "null"
+  --
+  void (keyword "null") <?> "null"
 
 
 ws :: Parser ()
