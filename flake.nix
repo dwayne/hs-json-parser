@@ -16,6 +16,9 @@
           shellHook = ''
             export PROJECT_ROOT="$PWD"
             export PS1="($name)\n$PS1"
+
+            alias b='cabal build'
+            alias t='cabal test'
           '';
         };
       }

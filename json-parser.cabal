@@ -8,8 +8,7 @@ library
   hs-source-dirs: src
 
   exposed-modules:
-    Lexer
-    Sandbox
+    Json.Parser
 
   build-depends:
     base,
@@ -24,7 +23,7 @@ test-suite tests
   main-is: Spec.hs
 
   other-modules:
-    Test.LexerSpec
+    Test.Json.ParserSpec
 
   build-depends:
     base,

@@ -1,6 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-module Lexer
+module Json.Parser
   ( Parser, Error
   , Number(..), number
   , SignedNatural(..), Sign(..), signedNatural
