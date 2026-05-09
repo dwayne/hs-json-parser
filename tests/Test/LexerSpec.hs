@@ -18,6 +18,7 @@ spec =
     signedNaturalSpec
     fractionalPartSpec
     exponentPartSpec
+    booleanSpec
 
 
 wsSpec :: Spec
@@ -144,6 +145,21 @@ exponentPartSpec =
       parseTillEnd L.exponentPart "E+00" `shouldParse` L.ExponentPart L.Plus "00"
       parseTillEnd L.exponentPart "E-000" `shouldParse` L.ExponentPart L.Minus "000"
 
+
+booleanSpec :: Spec
+booleanSpec =
+  describe "boolean" $ do
+    it "parses \"true\" or \"false\"" $ do
+      parseTillEnd L.boolean "true" `shouldParse` True
+      parseTillEnd L.boolean "false" `shouldParse` False
+
+      -- expected failures
+      parseTillEnd L.boolean `shouldFailOn` "TRUE"
+      parseTillEnd L.boolean `shouldFailOn` "True"
+      parseTillEnd L.boolean `shouldFailOn` "trueish"
+      parseTillEnd L.boolean `shouldFailOn` "FALSE"
+      parseTillEnd L.boolean `shouldFailOn` "False"
+      parseTillEnd L.boolean `shouldFailOn` "falsey"
 
 -- Helpers
 

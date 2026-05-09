@@ -6,6 +6,7 @@ module Lexer
   , SignedNatural(..), Sign(..), signedNatural
   , FractionalPart(..), fractionalPart
   , ExponentPart(..), exponentPart
+  , boolean
   , ws
   ) where
 
@@ -19,8 +20,13 @@ import Control.Monad (void)
 import Data.Text (Text)
 import Data.Void (Void)
 import Numeric.Natural (Natural)
-import Text.Megaparsec ((<?>), Parsec, ParseErrorBundle, satisfy, takeWhileP, takeWhile1P)
-import Text.Megaparsec.Char (char)
+import Text.Megaparsec
+  ( (<?>)
+  , Parsec, ParseErrorBundle
+  , notFollowedBy
+  , satisfy, takeWhileP, takeWhile1P
+  )
+import Text.Megaparsec.Char (alphaNumChar, char, string)
 
 
 type Parser = Parsec Void Text
@@ -60,6 +66,11 @@ data Sign
   = Plus
   | Minus
   deriving (Eq, Show)
+
+
+boolean :: Parser Bool
+boolean =
+  True <$ keyword "true" <|> False <$ keyword "false" <?> "boolean"
 
 
 number :: Parser Number
@@ -186,3 +197,7 @@ ws =
 
 optional :: Parser a -> Parser (Maybe a)
 optional p = (Just <$> p) <|> pure Nothing
+
+
+keyword :: Text -> Parser Text
+keyword kw = string kw <* notFollowedBy alphaNumChar <?> T.unpack kw
