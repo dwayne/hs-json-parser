@@ -36,18 +36,15 @@ data SignedNatural = SignedNatural Sign Text
 
 
 --
--- FractionalPart n k represents [n] * 10.0 ^^ (-k)
+-- FractionalPart n represents [n] * 10.0 ^^ (- length n)
 --
 -- where [n] is the natural number corresponding to n
 --
 -- For e.g.
 --
--- FractionalPart "5" 1 represents ["5"] * 10.0 ^^ (-1) = 5 * 10.0 ^^ (-1) = 0.5
+-- FractionalPart "5" ["5"] * 10.0 ^^ (-1) = 5 * 10.0 ^^ (-1) = 0.5
 --
-data FractionalPart = FractionalPart Text Int
-  --
-  -- TODO: Maybe remove the length from the FractionalPart since that can be derived
-  --
+data FractionalPart = FractionalPart Text
   deriving (Eq, Show)
 
 
@@ -128,10 +125,7 @@ fractionalPart =
   --
   -- '.' digits
   --
-  toFractionalPart <$> (char '.' *> digits1) <?> "fractional part"
-  where
-    toFractionalPart :: Text -> FractionalPart
-    toFractionalPart t = FractionalPart t (T.length t)
+  FractionalPart <$> (char '.' *> digits1) <?> "fractional part"
 
 
 exponent :: Parser (Maybe ExponentPart)

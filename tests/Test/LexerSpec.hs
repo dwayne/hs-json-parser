@@ -48,9 +48,9 @@ numberSpec =
       parseTillEnd L.number "-5" `shouldParse` L.Number (L.SignedNatural L.Minus "5") Nothing Nothing
 
       -- integer, fraction, no exponent
-      parseTillEnd L.number "0.5" `shouldParse` L.Number (L.SignedNatural L.Plus "0") (Just $ L.FractionalPart "5" 1) Nothing
-      parseTillEnd L.number "10.25" `shouldParse` L.Number (L.SignedNatural L.Plus "10") (Just $ L.FractionalPart "25" 2) Nothing
-      parseTillEnd L.number "-3.0125" `shouldParse` L.Number (L.SignedNatural L.Minus "3") (Just $ L.FractionalPart "0125" 4) Nothing
+      parseTillEnd L.number "0.5" `shouldParse` L.Number (L.SignedNatural L.Plus "0") (Just $ L.FractionalPart "5") Nothing
+      parseTillEnd L.number "10.25" `shouldParse` L.Number (L.SignedNatural L.Plus "10") (Just $ L.FractionalPart "25") Nothing
+      parseTillEnd L.number "-3.0125" `shouldParse` L.Number (L.SignedNatural L.Minus "3") (Just $ L.FractionalPart "0125") Nothing
 
       -- integer, no fraction, exponent
       parseTillEnd L.number "2E8" `shouldParse` L.Number (L.SignedNatural L.Plus "2") Nothing (Just $ L.ExponentPart L.Plus "8")
@@ -62,8 +62,8 @@ numberSpec =
       parseTillEnd L.number "-123e-0456" `shouldParse` L.Number (L.SignedNatural L.Minus "123") Nothing (Just $ L.ExponentPart L.Minus "0456")
 
       -- integer, fraction, exponent
-      parseTillEnd L.number "1.2e3" `shouldParse` L.Number (L.SignedNatural L.Plus "1") (Just $ L.FractionalPart "2" 1) (Just $ L.ExponentPart L.Plus "3")
-      parseTillEnd L.number "-1.2E-3" `shouldParse` L.Number (L.SignedNatural L.Minus "1") (Just $ L.FractionalPart "2" 1) (Just $ L.ExponentPart L.Minus "3")
+      parseTillEnd L.number "1.2e3" `shouldParse` L.Number (L.SignedNatural L.Plus "1") (Just $ L.FractionalPart "2") (Just $ L.ExponentPart L.Plus "3")
+      parseTillEnd L.number "-1.2E-3" `shouldParse` L.Number (L.SignedNatural L.Minus "1") (Just $ L.FractionalPart "2") (Just $ L.ExponentPart L.Minus "3")
 
       -- expected failures
       parseTillEnd L.number `shouldFailOn` ""
@@ -110,15 +110,15 @@ fractionalPartSpec =
   describe "fractionalPart" $ do
     it "parses the optional fractional part of a number" $ do
       -- one or more digits after the decimal point
-      parseTillEnd L.fractionalPart ".5" `shouldParse` L.FractionalPart "5" 1
-      parseTillEnd L.fractionalPart ".25" `shouldParse` L.FractionalPart "25" 2
-      parseTillEnd L.fractionalPart ".125" `shouldParse` L.FractionalPart "125" 3
-      parseTillEnd L.fractionalPart ".000125" `shouldParse` L.FractionalPart "000125" 6
+      parseTillEnd L.fractionalPart ".5" `shouldParse` L.FractionalPart "5"
+      parseTillEnd L.fractionalPart ".25" `shouldParse` L.FractionalPart "25"
+      parseTillEnd L.fractionalPart ".125" `shouldParse` L.FractionalPart "125"
+      parseTillEnd L.fractionalPart ".000125" `shouldParse` L.FractionalPart "000125"
 
       -- zeros
-      parseTillEnd L.fractionalPart ".0" `shouldParse` L.FractionalPart "0" 1
-      parseTillEnd L.fractionalPart ".00" `shouldParse` L.FractionalPart "00" 2
-      parseTillEnd L.fractionalPart ".0000000000" `shouldParse` L.FractionalPart "0000000000" 10
+      parseTillEnd L.fractionalPart ".0" `shouldParse` L.FractionalPart "0"
+      parseTillEnd L.fractionalPart ".00" `shouldParse` L.FractionalPart "00"
+      parseTillEnd L.fractionalPart ".0000000000" `shouldParse` L.FractionalPart "0000000000"
 
       -- expected failures
       parseTillEnd L.fractionalPart `shouldFailOn` ""
