@@ -7,10 +7,11 @@ module Json.Parser
   , FractionalPart(..), fractionalPart
   , ExponentPart(..), exponentPart
   , boolean
+  , null
   , ws
   ) where
 
-import Prelude hiding (exponent)
+import Prelude hiding (exponent, null)
 
 import qualified Data.Char as Char
 import qualified Data.Text as T
@@ -71,6 +72,11 @@ data Sign
 boolean :: Parser Bool
 boolean =
   True <$ keyword "true" <|> False <$ keyword "false" <?> "boolean"
+
+
+null :: Parser ()
+null =
+  void (keyword "null") <?> "null"
 
 
 number :: Parser Number

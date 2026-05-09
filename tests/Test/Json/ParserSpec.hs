@@ -19,6 +19,7 @@ spec =
     fractionalPartSpec
     exponentPartSpec
     booleanSpec
+    nullSpec
 
 
 wsSpec :: Spec
@@ -160,6 +161,19 @@ booleanSpec =
       parseTillEnd P.boolean `shouldFailOn` "FALSE"
       parseTillEnd P.boolean `shouldFailOn` "False"
       parseTillEnd P.boolean `shouldFailOn` "falsey"
+
+
+nullSpec :: Spec
+nullSpec =
+  describe "null" $ do
+    it "parses \"null\"" $ do
+      parseTillEnd P.null "null" `shouldParse` ()
+
+      -- expected failures
+      parseTillEnd P.null `shouldFailOn` "NULL"
+      parseTillEnd P.null `shouldFailOn` "Null"
+      parseTillEnd P.null `shouldFailOn` "nullish"
+
 
 -- Helpers
 
