@@ -4,6 +4,7 @@ module Json.Parser
   ( Parser, Error
   , Json(..), json
   , Array, array
+  , string
   , Number(..), number
   , SignedNatural(..), Sign(..), signedNatural
   , FractionalPart(..), fractionalPart
@@ -17,21 +18,23 @@ import Prelude hiding (exponent, null)
 
 import qualified Data.Char as Char
 import qualified Data.Text as T
+import qualified Text.Megaparsec.Char as Char
 import qualified Text.Megaparsec.Char.Lexer as L
 
 import Control.Applicative ((<|>), empty)
 import Control.Monad (void)
 import Data.Text (Text)
 import Data.Void (Void)
+import Numeric (readHex)
 import Numeric.Natural (Natural)
 import Text.Megaparsec
   ( (<?>)
   , Parsec, ParseErrorBundle
-  , between, choice, sepBy
+  , between, choice, many, sepBy
   , notFollowedBy
   , satisfy, takeWhileP, takeWhile1P
   )
-import Text.Megaparsec.Char (alphaNumChar, char, string)
+import Text.Megaparsec.Char (alphaNumChar, char)
 
 
 type Parser = Parsec Void Text
@@ -40,6 +43,7 @@ type Error = ParseErrorBundle Text Void
 
 data Json
   = JsonArray Array
+  | JsonString Text
   | JsonNumber Number
   | JsonBoolean Bool
   | JsonNull
@@ -116,6 +120,7 @@ value =
   --
   choice
     [ JsonArray <$> array
+    , JsonString <$> string
     , JsonNumber <$> number
     , JsonBoolean <$> boolean
     , JsonNull <$ null
@@ -140,6 +145,66 @@ elements =
   --     element ',' ws elements
   --
   element `sepBy` (symbol ",")
+
+
+string :: Parser Text
+string = between (char '"') (char '"') characters
+
+
+characters :: Parser Text
+characters = T.pack <$> many character
+
+
+character :: Parser Char
+character =
+  regular <|> char '\\' *> escape
+
+
+regular :: Parser Char
+regular =
+  --
+  -- '0020' . '10FFFF' - '"' - '\'
+  --
+  satisfy isRegular
+  where
+    isRegular :: Char -> Bool
+    isRegular ch = ch >= '\x0020' && ch <= '\x10FFFF' && ch /= '\x0022' && ch /= '\x005C'
+
+
+escape :: Parser Char
+escape =
+  choice
+    [ char '\x0022'        -- quotation mark
+    , char '\x005C'        -- reverse solidus (backslash)
+    , char '\x002F'        -- solidus (slash)
+    , '\x0008' <$ char 'b' -- backspace
+    , '\x000C' <$ char 'f' -- form feed
+    , '\x000A' <$ char 'n' -- line feed (newline)
+    , '\x000D' <$ char 'r' -- carriage return
+    , '\x0009' <$ char 't' -- horizontal tab
+    , hexToChar <$ char 'u' <*> hex <*> hex <*> hex <*> hex
+    ]
+  where
+    hexToChar :: Char -> Char -> Char -> Char -> Char
+    hexToChar a b c d =
+      case readHex [a, b, c, d] of
+        [(n, "")] -> Char.chr n
+
+        --
+        -- '\xFFFD' or replacement character
+        -- is the standard Unicode substitute for unrepresentable/invalid input
+        --
+        _ -> '\xFFFD'
+
+    hex :: Parser Char
+    hex =
+      --
+      -- hex
+      --     digit
+      --     'A' . 'F'
+      --     'a' . 'f'
+      --
+      satisfy Char.isHexDigit <?> "hex"
 
 
 number :: Parser Number
@@ -264,7 +329,7 @@ null =
 
 
 keyword :: Text -> Parser Text
-keyword kw = string kw <* notFollowedBy alphaNumChar <?> T.unpack kw
+keyword kw = Char.string kw <* notFollowedBy alphaNumChar <?> T.unpack kw
 
 
 -- Lexeme

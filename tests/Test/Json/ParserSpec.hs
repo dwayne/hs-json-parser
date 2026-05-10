@@ -20,6 +20,7 @@ spec =
     fractionalPartSpec
     exponentPartSpec
     numberSpec
+    stringSpec
     arraySpec
     jsonSpec
 
@@ -177,6 +178,41 @@ numberSpec =
       parseTillEnd P.number `shouldFailOn` ".1"
 
 
+stringSpec :: Spec
+stringSpec =
+  describe "string" $ do
+    it "parses a string" $ do
+      -- empty
+      parseTillEnd P.string "\"\"" `shouldParse` ""
+
+      -- regular
+      parseTillEnd P.string "\"abcdef0123ABC!@#$%\"" `shouldParse` "abcdef0123ABC!@#$%"
+
+      -- escape
+      parseTillEnd P.string "\"\\\"\"" `shouldParse` "\""
+      parseTillEnd P.string "\"\\\\\"" `shouldParse` "\\"
+      parseTillEnd P.string "\"\\/\"" `shouldParse` "/"
+      parseTillEnd P.string "\"\\b\"" `shouldParse` "\b"
+      parseTillEnd P.string "\"\\f\"" `shouldParse` "\f"
+      parseTillEnd P.string "\"\\n\"" `shouldParse` "\n"
+      parseTillEnd P.string "\"\\r\"" `shouldParse` "\r"
+      parseTillEnd P.string "\"\\t\"" `shouldParse` "\t"
+
+      -- Unicode code points
+      parseTillEnd P.string "\"\\u0022\"" `shouldParse` "\""
+      parseTillEnd P.string "\"\\u005C\"" `shouldParse` "\\"
+      parseTillEnd P.string "\"\\u005c\"" `shouldParse` "\\"
+      parseTillEnd P.string "\"\\u002F\"" `shouldParse` "/"
+      parseTillEnd P.string "\"\\u0008\"" `shouldParse` "\b"
+      parseTillEnd P.string "\"\\u000C\"" `shouldParse` "\f"
+      parseTillEnd P.string "\"\\u000A\"" `shouldParse` "\n"
+      parseTillEnd P.string "\"\\u000D\"" `shouldParse` "\r"
+      parseTillEnd P.string "\"\\u0009\"" `shouldParse` "\t"
+
+      -- mixed
+      parseTillEnd P.string "\"\\\"a\\\\b\\/c\\bd\\fe\\nf\\r\\t\\u002f\"" `shouldParse` "\"a\\b/c\bd\fe\nf\r\t/"
+
+
 arraySpec :: Spec
 arraySpec =
   describe "array" $ do
@@ -203,6 +239,7 @@ jsonSpec =
       parseTillEnd P.json "true" `shouldParse` P.JsonBoolean True
       parseTillEnd P.json "false" `shouldParse` P.JsonBoolean False
       parseTillEnd P.json "123" `shouldParse` P.JsonNumber (P.Number (P.SignedNatural P.Plus "123") Nothing Nothing)
+      parseTillEnd P.json "\"hello\"" `shouldParse` P.JsonString "hello"
       parseTillEnd P.json "[]" `shouldParse` P.JsonArray []
 
 
