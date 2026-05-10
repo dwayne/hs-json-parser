@@ -13,59 +13,60 @@ import Text.Megaparsec (parse, eof)
 spec :: Spec
 spec =
   describe "Parser" $ do
-    jsonSpec
-    numberSpec
+    wsSpec
+    nullSpec
+    booleanSpec
     signedNaturalSpec
     fractionalPartSpec
     exponentPartSpec
-    booleanSpec
-    nullSpec
-    wsSpec
+    numberSpec
+    arraySpec
+    jsonSpec
 
 
-jsonSpec :: Spec
-jsonSpec =
-  describe "json" $ do
-    it "parses a JSON value" $ do
-      parseTillEnd P.json "123" `shouldParse` P.JsonNumber (P.Number (P.SignedNatural P.Plus "123") Nothing Nothing)
-      parseTillEnd P.json " true" `shouldParse` P.JsonBoolean True
-      parseTillEnd P.json "false " `shouldParse` P.JsonBoolean False
-      parseTillEnd P.json " null " `shouldParse` P.JsonNull
+wsSpec :: Spec
+wsSpec =
+  describe "ws" $ do
+    it "parses zero or more whitespace characters" $ do
+      -- zero
+      parseTillEnd P.ws `shouldSucceedOn` ""
+
+      -- one
+      parseTillEnd P.ws `shouldSucceedOn` " "
+      parseTillEnd P.ws `shouldSucceedOn` "\n"
+      parseTillEnd P.ws `shouldSucceedOn` "\r"
+      parseTillEnd P.ws `shouldSucceedOn` "\t"
+
+      -- more than one
+      parseTillEnd P.ws `shouldSucceedOn` " \n\r\t\t\r\n "
 
 
-numberSpec :: Spec
-numberSpec =
-  describe "number" $ do
-    it "parses a number" $ do
-      -- integer, no fraction, no exponent
-      parseTillEnd P.number "0" `shouldParse` P.Number (P.SignedNatural P.Plus "0") Nothing Nothing
-      parseTillEnd P.number "-0" `shouldParse` P.Number (P.SignedNatural P.Minus "0") Nothing Nothing
-      parseTillEnd P.number "5" `shouldParse` P.Number (P.SignedNatural P.Plus "5") Nothing Nothing
-      parseTillEnd P.number "-5" `shouldParse` P.Number (P.SignedNatural P.Minus "5") Nothing Nothing
-
-      -- integer, fraction, no exponent
-      parseTillEnd P.number "0.5" `shouldParse` P.Number (P.SignedNatural P.Plus "0") (Just $ P.FractionalPart "5") Nothing
-      parseTillEnd P.number "10.25" `shouldParse` P.Number (P.SignedNatural P.Plus "10") (Just $ P.FractionalPart "25") Nothing
-      parseTillEnd P.number "-3.0125" `shouldParse` P.Number (P.SignedNatural P.Minus "3") (Just $ P.FractionalPart "0125") Nothing
-
-      -- integer, no fraction, exponent
-      parseTillEnd P.number "2E8" `shouldParse` P.Number (P.SignedNatural P.Plus "2") Nothing (Just $ P.ExponentPart P.Plus "8")
-      parseTillEnd P.number "2E+8" `shouldParse` P.Number (P.SignedNatural P.Plus "2") Nothing (Just $ P.ExponentPart P.Plus "8")
-      parseTillEnd P.number "2E-8" `shouldParse` P.Number (P.SignedNatural P.Plus "2") Nothing (Just $ P.ExponentPart P.Minus "8")
-      parseTillEnd P.number "2e8" `shouldParse` P.Number (P.SignedNatural P.Plus "2") Nothing (Just $ P.ExponentPart P.Plus "8")
-      parseTillEnd P.number "2e+8" `shouldParse` P.Number (P.SignedNatural P.Plus "2") Nothing (Just $ P.ExponentPart P.Plus "8")
-      parseTillEnd P.number "2e-8" `shouldParse` P.Number (P.SignedNatural P.Plus "2") Nothing (Just $ P.ExponentPart P.Minus "8")
-      parseTillEnd P.number "-123e-0456" `shouldParse` P.Number (P.SignedNatural P.Minus "123") Nothing (Just $ P.ExponentPart P.Minus "0456")
-
-      -- integer, fraction, exponent
-      parseTillEnd P.number "1.2e3" `shouldParse` P.Number (P.SignedNatural P.Plus "1") (Just $ P.FractionalPart "2") (Just $ P.ExponentPart P.Plus "3")
-      parseTillEnd P.number "-1.2E-3" `shouldParse` P.Number (P.SignedNatural P.Minus "1") (Just $ P.FractionalPart "2") (Just $ P.ExponentPart P.Minus "3")
+nullSpec :: Spec
+nullSpec =
+  describe "null" $ do
+    it "parses \"null\"" $ do
+      parseTillEnd P.null "null" `shouldParse` ()
 
       -- expected failures
-      parseTillEnd P.number `shouldFailOn` ""
-      parseTillEnd P.number `shouldFailOn` "-"
-      parseTillEnd P.number `shouldFailOn` "1."
-      parseTillEnd P.number `shouldFailOn` ".1"
+      parseTillEnd P.null `shouldFailOn` "NULL"
+      parseTillEnd P.null `shouldFailOn` "Null"
+      parseTillEnd P.null `shouldFailOn` "nullish"
+
+
+booleanSpec :: Spec
+booleanSpec =
+  describe "boolean" $ do
+    it "parses \"true\" or \"false\"" $ do
+      parseTillEnd P.boolean "true" `shouldParse` True
+      parseTillEnd P.boolean "false" `shouldParse` False
+
+      -- expected failures
+      parseTillEnd P.boolean `shouldFailOn` "TRUE"
+      parseTillEnd P.boolean `shouldFailOn` "True"
+      parseTillEnd P.boolean `shouldFailOn` "trueish"
+      parseTillEnd P.boolean `shouldFailOn` "FALSE"
+      parseTillEnd P.boolean `shouldFailOn` "False"
+      parseTillEnd P.boolean `shouldFailOn` "falsey"
 
 
 signedNaturalSpec :: Spec
@@ -141,49 +142,68 @@ exponentPartSpec =
       parseTillEnd P.exponentPart "E-000" `shouldParse` P.ExponentPart P.Minus "000"
 
 
-booleanSpec :: Spec
-booleanSpec =
-  describe "boolean" $ do
-    it "parses \"true\" or \"false\"" $ do
-      parseTillEnd P.boolean "true" `shouldParse` True
-      parseTillEnd P.boolean "false" `shouldParse` False
+numberSpec :: Spec
+numberSpec =
+  describe "number" $ do
+    it "parses a number" $ do
+      -- integer, no fraction, no exponent
+      parseTillEnd P.number "0" `shouldParse` P.Number (P.SignedNatural P.Plus "0") Nothing Nothing
+      parseTillEnd P.number "-0" `shouldParse` P.Number (P.SignedNatural P.Minus "0") Nothing Nothing
+      parseTillEnd P.number "5" `shouldParse` P.Number (P.SignedNatural P.Plus "5") Nothing Nothing
+      parseTillEnd P.number "-5" `shouldParse` P.Number (P.SignedNatural P.Minus "5") Nothing Nothing
+
+      -- integer, fraction, no exponent
+      parseTillEnd P.number "0.5" `shouldParse` P.Number (P.SignedNatural P.Plus "0") (Just $ P.FractionalPart "5") Nothing
+      parseTillEnd P.number "10.25" `shouldParse` P.Number (P.SignedNatural P.Plus "10") (Just $ P.FractionalPart "25") Nothing
+      parseTillEnd P.number "-3.0125" `shouldParse` P.Number (P.SignedNatural P.Minus "3") (Just $ P.FractionalPart "0125") Nothing
+
+      -- integer, no fraction, exponent
+      parseTillEnd P.number "2E8" `shouldParse` P.Number (P.SignedNatural P.Plus "2") Nothing (Just $ P.ExponentPart P.Plus "8")
+      parseTillEnd P.number "2E+8" `shouldParse` P.Number (P.SignedNatural P.Plus "2") Nothing (Just $ P.ExponentPart P.Plus "8")
+      parseTillEnd P.number "2E-8" `shouldParse` P.Number (P.SignedNatural P.Plus "2") Nothing (Just $ P.ExponentPart P.Minus "8")
+      parseTillEnd P.number "2e8" `shouldParse` P.Number (P.SignedNatural P.Plus "2") Nothing (Just $ P.ExponentPart P.Plus "8")
+      parseTillEnd P.number "2e+8" `shouldParse` P.Number (P.SignedNatural P.Plus "2") Nothing (Just $ P.ExponentPart P.Plus "8")
+      parseTillEnd P.number "2e-8" `shouldParse` P.Number (P.SignedNatural P.Plus "2") Nothing (Just $ P.ExponentPart P.Minus "8")
+      parseTillEnd P.number "-123e-0456" `shouldParse` P.Number (P.SignedNatural P.Minus "123") Nothing (Just $ P.ExponentPart P.Minus "0456")
+
+      -- integer, fraction, exponent
+      parseTillEnd P.number "1.2e3" `shouldParse` P.Number (P.SignedNatural P.Plus "1") (Just $ P.FractionalPart "2") (Just $ P.ExponentPart P.Plus "3")
+      parseTillEnd P.number "-1.2E-3" `shouldParse` P.Number (P.SignedNatural P.Minus "1") (Just $ P.FractionalPart "2") (Just $ P.ExponentPart P.Minus "3")
 
       -- expected failures
-      parseTillEnd P.boolean `shouldFailOn` "TRUE"
-      parseTillEnd P.boolean `shouldFailOn` "True"
-      parseTillEnd P.boolean `shouldFailOn` "trueish"
-      parseTillEnd P.boolean `shouldFailOn` "FALSE"
-      parseTillEnd P.boolean `shouldFailOn` "False"
-      parseTillEnd P.boolean `shouldFailOn` "falsey"
+      parseTillEnd P.number `shouldFailOn` ""
+      parseTillEnd P.number `shouldFailOn` "-"
+      parseTillEnd P.number `shouldFailOn` "1."
+      parseTillEnd P.number `shouldFailOn` ".1"
 
 
-nullSpec :: Spec
-nullSpec =
-  describe "null" $ do
-    it "parses \"null\"" $ do
-      parseTillEnd P.null "null" `shouldParse` ()
+arraySpec :: Spec
+arraySpec =
+  describe "array" $ do
+    it "parses an array" $ do
+      -- empty
+      parseTillEnd P.array "[]" `shouldParse` []
+      parseTillEnd P.array "[ ]" `shouldParse` []
+      parseTillEnd P.array "[  ]" `shouldParse` []
 
-      -- expected failures
-      parseTillEnd P.null `shouldFailOn` "NULL"
-      parseTillEnd P.null `shouldFailOn` "Null"
-      parseTillEnd P.null `shouldFailOn` "nullish"
-
-
-wsSpec :: Spec
-wsSpec =
-  describe "ws" $ do
-    it "parses zero or more whitespace characters" $ do
-      -- zero
-      parseTillEnd P.ws `shouldSucceedOn` ""
-
-      -- one
-      parseTillEnd P.ws `shouldSucceedOn` " "
-      parseTillEnd P.ws `shouldSucceedOn` "\n"
-      parseTillEnd P.ws `shouldSucceedOn` "\r"
-      parseTillEnd P.ws `shouldSucceedOn` "\t"
+      -- singleton
+      parseTillEnd P.array "[true]" `shouldParse` [ P.JsonBoolean True ]
+      parseTillEnd P.array "[ true ]" `shouldParse` [ P.JsonBoolean True ]
 
       -- more than one
-      parseTillEnd P.ws `shouldSucceedOn` " \n\r\t\t\r\n "
+      parseTillEnd P.array "[true,false]" `shouldParse` [ P.JsonBoolean True, P.JsonBoolean False ]
+      parseTillEnd P.array "[ true  ,   false    ]     " `shouldParse` [ P.JsonBoolean True, P.JsonBoolean False ]
+
+
+jsonSpec :: Spec
+jsonSpec =
+  describe "json" $ do
+    it "parses a JSON value" $ do
+      parseTillEnd P.json "null" `shouldParse` P.JsonNull
+      parseTillEnd P.json "true" `shouldParse` P.JsonBoolean True
+      parseTillEnd P.json "false" `shouldParse` P.JsonBoolean False
+      parseTillEnd P.json "123" `shouldParse` P.JsonNumber (P.Number (P.SignedNatural P.Plus "123") Nothing Nothing)
+      parseTillEnd P.json "[]" `shouldParse` P.JsonArray []
 
 
 -- Helpers

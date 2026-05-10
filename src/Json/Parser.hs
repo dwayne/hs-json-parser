@@ -3,6 +3,7 @@
 module Json.Parser
   ( Parser, Error
   , Json(..), json
+  , Array, array
   , Number(..), number
   , SignedNatural(..), Sign(..), signedNatural
   , FractionalPart(..), fractionalPart
@@ -16,8 +17,9 @@ import Prelude hiding (exponent, null)
 
 import qualified Data.Char as Char
 import qualified Data.Text as T
+import qualified Text.Megaparsec.Char.Lexer as L
 
-import Control.Applicative ((<|>))
+import Control.Applicative ((<|>), empty)
 import Control.Monad (void)
 import Data.Text (Text)
 import Data.Void (Void)
@@ -25,7 +27,7 @@ import Numeric.Natural (Natural)
 import Text.Megaparsec
   ( (<?>)
   , Parsec, ParseErrorBundle
-  , choice
+  , between, choice, sepBy
   , notFollowedBy
   , satisfy, takeWhileP, takeWhile1P
   )
@@ -37,10 +39,14 @@ type Error = ParseErrorBundle Text Void
 
 
 data Json
-  = JsonNumber Number
+  = JsonArray Array
+  | JsonNumber Number
   | JsonBoolean Bool
   | JsonNull
   deriving (Eq, Show)
+
+
+type Array = [Json]
 
 
 data Number = Number SignedNatural (Maybe FractionalPart) (Maybe ExponentPart)
@@ -82,44 +88,65 @@ json :: Parser Json
 json =
   --
   -- json
-  --   element
+  --     ws element
   --
-  element
+  ws *> element
 
 
 element :: Parser Json
 element =
   --
   -- element
-  --   ws value ws
+  --     value ws
   --
-  ws *> value <* ws
+  lexeme value
 
 
 value :: Parser Json
 value =
   --
   -- value
-  --   object
-  --   array
-  --   string
-  --   number
-  --   "true"
-  --   "false"
-  --   "null"
+  --     object
+  --     array
+  --     string
+  --     number
+  --     "true"
+  --     "false"
+  --     "null"
   --
   choice
-    [ JsonNumber <$> number
+    [ JsonArray <$> array
+    , JsonNumber <$> number
     , JsonBoolean <$> boolean
     , JsonNull <$ null
     ]
+
+
+array :: Parser Array
+array =
+  --
+  -- array
+  --     '[' ws ']' ws
+  --     '[' ws elements ']' ws
+  --
+  between (symbol "[") (symbol "]") elements
+
+
+elements :: Parser [Json]
+elements =
+  --
+  -- elements
+  --     element
+  --     element ',' ws elements
+  --
+  element `sepBy` (symbol ",")
 
 
 number :: Parser Number
 number =
   --
   -- number
-  --   integer fraction exponent
+  --     integer fraction exponent
   --
   Number <$> signedNatural <*> fraction <*> exponent <?> "number"
 
@@ -171,8 +198,8 @@ fraction :: Parser (Maybe FractionalPart)
 fraction =
   --
   -- fraction
-  --   ""
-  --   '.' digits
+  --     ""
+  --     '.' digits
   --
   optional fractionalPart
 
@@ -189,9 +216,9 @@ exponent :: Parser (Maybe ExponentPart)
 exponent =
   --
   -- exponent
-  --   ""
-  --   'E' sign digits
-  --   'e' sign digits
+  --     ""
+  --     'E' sign digits
+  --     'e' sign digits
   --
   optional exponentPart
 
@@ -236,6 +263,25 @@ null =
   void (keyword "null") <?> "null"
 
 
+keyword :: Text -> Parser Text
+keyword kw = string kw <* notFollowedBy alphaNumChar <?> T.unpack kw
+
+
+-- Lexeme
+
+
+lexeme :: Parser a -> Parser a
+lexeme = L.lexeme sc
+
+
+symbol :: Text -> Parser Text
+symbol = L.symbol sc
+
+
+sc :: Parser ()
+sc = L.space ws1 empty empty
+
+
 ws :: Parser ()
 ws =
   --
@@ -247,13 +293,26 @@ ws =
   --     '0009' ws
   --
   void $ takeWhileP (Just "white space") isSpace
-  where
-    isSpace :: Char -> Bool
-    isSpace ch =
-         ch == '\x0020'
-      || ch == '\x000A'
-      || ch == '\x000D'
-      || ch == '\x0009'
+
+
+ws1 :: Parser ()
+ws1 =
+  --
+  -- ws
+  --     '0020' ws
+  --     '000A' ws
+  --     '000D' ws
+  --     '0009' ws
+  --
+  void $ takeWhile1P (Just "white space") isSpace
+
+
+isSpace :: Char -> Bool
+isSpace ch =
+     ch == '\x0020'
+  || ch == '\x000A'
+  || ch == '\x000D'
+  || ch == '\x0009'
 
 
 -- Helpers
@@ -261,7 +320,3 @@ ws =
 
 optional :: Parser a -> Parser (Maybe a)
 optional p = (Just <$> p) <|> pure Nothing
-
-
-keyword :: Text -> Parser Text
-keyword kw = string kw <* notFollowedBy alphaNumChar <?> T.unpack kw
