@@ -22,6 +22,7 @@ spec =
     numberSpec
     stringSpec
     arraySpec
+    objectSpec
     jsonSpec
 
 
@@ -229,6 +230,29 @@ arraySpec =
       -- more than one
       parseTillEnd P.array "[true,false]" `shouldParse` [ P.JsonBoolean True, P.JsonBoolean False ]
       parseTillEnd P.array "[ true  ,   false    ]     " `shouldParse` [ P.JsonBoolean True, P.JsonBoolean False ]
+
+
+objectSpec :: Spec
+objectSpec =
+  describe "object" $ do
+    it "parses an object" $ do
+      -- empty
+      parseTillEnd P.object "{}" `shouldParse` []
+      parseTillEnd P.object "{ }" `shouldParse` []
+      parseTillEnd P.object "{  }" `shouldParse` []
+
+      -- non-empty
+      parseTillEnd P.object "{\"x\":5}" `shouldParse` [("x", P.JsonNumber (P.Number (P.SignedNatural P.Plus "5") Nothing Nothing))]
+      parseTillEnd P.object "{ \"x\": 5 }" `shouldParse` [("x", P.JsonNumber (P.Number (P.SignedNatural P.Plus "5") Nothing Nothing))]
+
+      parseTillEnd P.object "{ \"x\": 5, \"y\": 10 }" `shouldParse` [
+          ("x", P.JsonNumber (P.Number (P.SignedNatural P.Plus "5") Nothing Nothing)),
+          ("y", P.JsonNumber (P.Number (P.SignedNatural P.Plus "10") Nothing Nothing))
+        ]
+
+      -- expected failures
+      parseTillEnd P.object `shouldFailOn` "{ \"x\": 5, }"
+      parseTillEnd P.object `shouldFailOn` "{ \"x\": 5,, }"
 
 
 jsonSpec :: Spec

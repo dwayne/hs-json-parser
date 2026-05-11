@@ -3,6 +3,7 @@
 module Json.Parser
   ( Parser, Error
   , Json(..), json
+  , Object, object
   , Array, array
   , string
   , Number(..), number
@@ -42,12 +43,16 @@ type Error = ParseErrorBundle Text Void
 
 
 data Json
-  = JsonArray Array
+  = JsonObject Object
+  | JsonArray Array
   | JsonString Text
   | JsonNumber Number
   | JsonBoolean Bool
   | JsonNull
   deriving (Eq, Show)
+
+
+type Object = [(Text, Json)]
 
 
 type Array = [Json]
@@ -119,12 +124,42 @@ value =
   --     "null"
   --
   choice
-    [ JsonArray <$> array
+    [ JsonObject <$> object
+    , JsonArray <$> array
     , JsonString <$> string
     , JsonNumber <$> number
     , JsonBoolean <$> boolean
     , JsonNull <$ null
     ]
+
+
+object :: Parser Object
+object =
+  --
+  -- object
+  --     '{' ws '}' ws
+  --     '{' ws members '}' ws
+  --
+  between (symbol "{") (symbol "}") members
+
+
+members :: Parser [(Text, Json)]
+members =
+  --
+  -- members
+  --     member
+  --     member ',' ws members
+  --
+  member `sepBy` (symbol ",")
+
+
+member :: Parser (Text, Json)
+member =
+  --
+  -- member
+  --     string ws ':' ws element
+  --
+  (,) <$> lexeme string <*> (symbol ":" *> element)
 
 
 array :: Parser Array
