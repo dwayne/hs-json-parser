@@ -27,7 +27,6 @@ import Control.Monad (void)
 import Data.Text (Text)
 import Data.Void (Void)
 import Numeric (readHex)
-import Numeric.Natural (Natural)
 import Text.Megaparsec
   ( (<?>)
   , Parsec, ParseErrorBundle
@@ -75,7 +74,7 @@ data SignedNatural = SignedNatural Sign Text
 --
 -- FractionalPart "5" ["5"] * 10.0 ^^ (-1) = 5 * 10.0 ^^ (-1) = 0.5
 --
-data FractionalPart = FractionalPart Text
+newtype FractionalPart = FractionalPart Text
   deriving (Eq, Show)
 
 
@@ -150,7 +149,7 @@ members =
   --     member
   --     member ',' ws members
   --
-  member `sepBy` (symbol ",")
+  member `sepBy` symbol ","
 
 
 member :: Parser (Text, Json)
@@ -179,7 +178,7 @@ elements =
   --     element
   --     element ',' ws elements
   --
-  element `sepBy` (symbol ",")
+  element `sepBy` symbol ","
 
 
 string :: Parser Text

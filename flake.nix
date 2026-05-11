@@ -11,6 +11,7 @@
           packages = [
             pkgs.cabal-install
             pkgs.haskell.compiler.ghc9103
+            pkgs.hlint
           ];
 
           shellHook = ''
@@ -19,6 +20,7 @@
 
             alias b='cabal build'
             alias t='cabal test'
+            alias l='hlint src tests'
           '';
         };
       }
