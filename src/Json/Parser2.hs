@@ -2,22 +2,41 @@
 
 module Json.Parser2
     ( Parser, Error
+    , false, true, null
     , ws1
     ) where
 
+import qualified Text.Megaparsec.Char as Char
 import qualified Text.Megaparsec.Char.Lexer as L
 
 import Control.Applicative (empty)
 import Control.Monad (void)
 import Data.Text (Text)
 import Data.Void (Void)
-import Text.Megaparsec (Parsec, ParseErrorBundle, takeWhile1P)
+import Prelude hiding (null)
+import Text.Megaparsec (Parsec, ParseErrorBundle, notFollowedBy, takeWhile1P)
+import Text.Megaparsec.Char (alphaNumChar)
 
 
 type Parser = Parsec Void Text
 
 
 type Error = ParseErrorBundle Text Void
+
+
+-- Literals
+
+
+false :: Parser Bool
+false = False <$ keyword "false"
+
+
+true :: Parser Bool
+true = True <$ keyword "true"
+
+
+null :: Parser ()
+null = void $ keyword "null"
 
 
 -- Structural characters
@@ -54,6 +73,10 @@ valueSeparator =
 
 
 -- Lexeme parsers
+
+
+keyword :: Text -> Parser Text
+keyword kw = lexeme (Char.string kw <* notFollowedBy alphaNumChar)
 
 
 symbol :: Text -> Parser Text

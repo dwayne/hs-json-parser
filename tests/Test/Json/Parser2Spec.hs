@@ -14,6 +14,9 @@ spec :: Spec
 spec =
   describe "Parser" $ do
     wsSpec
+    falseSpec
+    trueSpec
+    nullSpec
 
 
 wsSpec :: Spec
@@ -30,6 +33,45 @@ wsSpec =
 
     it "more than one" $ do
       parseTillEnd P.ws1 `shouldSucceedOn` " \n\r\t\t\r\n "
+
+
+falseSpec :: Spec
+falseSpec =
+  describe "false" $ do
+    it "parses \"false\"" $ do
+      parseTillEnd P.false "false" `shouldParse` False
+      parseTillEnd P.false "false " `shouldParse` False
+      parseTillEnd P.false "false  " `shouldParse` False
+
+      parseTillEnd P.false `shouldFailOn` "FALSE"
+      parseTillEnd P.false `shouldFailOn` "False"
+      parseTillEnd P.false `shouldFailOn` "falsey"
+
+
+trueSpec :: Spec
+trueSpec =
+  describe "true" $ do
+    it "parses \"true\"" $ do
+      parseTillEnd P.true "true" `shouldParse` True
+      parseTillEnd P.true "true " `shouldParse` True
+      parseTillEnd P.true "true  " `shouldParse` True
+
+      parseTillEnd P.true `shouldFailOn` "TRUE"
+      parseTillEnd P.true `shouldFailOn` "True"
+      parseTillEnd P.true `shouldFailOn` "trueish"
+
+
+nullSpec :: Spec
+nullSpec =
+  describe "null" $ do
+    it "parses \"null\"" $ do
+      parseTillEnd P.null `shouldSucceedOn` "null"
+      parseTillEnd P.null `shouldSucceedOn` "null "
+      parseTillEnd P.null `shouldSucceedOn` "null  "
+
+      parseTillEnd P.null `shouldFailOn` "NULL"
+      parseTillEnd P.null `shouldFailOn` "Null"
+      parseTillEnd P.null `shouldFailOn` "nullish"
 
 
 -- Helpers
