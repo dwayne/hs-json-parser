@@ -1,3 +1,5 @@
+{-# LANGUAGE OverloadedStrings #-}
+
 module Json.Parser2
     ( Parser, Error
     , ws1
@@ -16,6 +18,42 @@ type Parser = Parsec Void Text
 
 
 type Error = ParseErrorBundle Text Void
+
+
+-- Structural characters
+
+
+beginArray :: Parser Text
+beginArray =
+  symbol "[" -- left square bracket
+
+
+endArray :: Parser Text
+endArray =
+  symbol "]" -- right square bracket
+
+
+beginObject :: Parser Text
+beginObject =
+  symbol "{" -- left curly bracket
+
+
+endObject :: Parser Text
+endObject =
+  symbol "}" -- right curly bracket
+
+
+nameSeparator :: Parser Text
+nameSeparator =
+  symbol ":" -- colon
+
+
+valueSeparator :: Parser Text
+valueSeparator =
+  symbol "," -- comma
+
+
+-- Lexeme parsers
 
 
 symbol :: Text -> Parser Text
