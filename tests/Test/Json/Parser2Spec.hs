@@ -18,18 +18,18 @@ spec =
 
 wsSpec :: Spec
 wsSpec =
-  describe "ws" $ do
+  describe "ws1" $ do
     it "zero" $ do
-      parseTillEnd P.ws `shouldSucceedOn` ""
+      parseTillEnd P.ws1 `shouldFailOn` ""
 
     it "one" $ do
-      parseTillEnd P.ws `shouldSucceedOn` " "
-      parseTillEnd P.ws `shouldSucceedOn` "\t"
-      parseTillEnd P.ws `shouldSucceedOn` "\n"
-      parseTillEnd P.ws `shouldSucceedOn` "\r"
+      parseTillEnd P.ws1 `shouldSucceedOn` " "
+      parseTillEnd P.ws1 `shouldSucceedOn` "\t"
+      parseTillEnd P.ws1 `shouldSucceedOn` "\n"
+      parseTillEnd P.ws1 `shouldSucceedOn` "\r"
 
     it "more than one" $ do
-      parseTillEnd P.ws `shouldSucceedOn` " \n\r\t\t\r\n "
+      parseTillEnd P.ws1 `shouldSucceedOn` " \n\r\t\t\r\n "
 
 
 -- Helpers
