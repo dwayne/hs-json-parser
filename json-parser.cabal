@@ -11,6 +11,7 @@ library
 
   exposed-modules:
     Json.Parser
+    Json.Parser2
 
   build-depends:
     base,
@@ -28,6 +29,7 @@ test-suite tests
 
   other-modules:
     Test.Json.ParserSpec
+    Test.Json.Parser2Spec
 
   build-depends:
     base,
