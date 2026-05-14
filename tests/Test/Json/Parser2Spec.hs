@@ -20,7 +20,7 @@ import Text.Megaparsec (parse, eof)
 spec :: Spec
 spec =
   describe "Parser" $ do
-    wsSpec
+    oneOrMoreWhitespacesSpec
     falseSpec
     trueSpec
     nullSpec
@@ -28,20 +28,20 @@ spec =
     stringSpec
 
 
-wsSpec :: Spec
-wsSpec =
-  describe "ws1" $ do
-    it "zero" $ do
-      parseTillEnd P.ws1 `shouldFailOn` ""
+oneOrMoreWhitespacesSpec :: Spec
+oneOrMoreWhitespacesSpec =
+  describe "oneOrMoreWhitespaces" $ do
+    it "parses zero whitespace characters" $ do
+      parseTillEnd P.oneOrMoreWhitespaces `shouldFailOn` ""
 
     it "one" $ do
-      parseTillEnd P.ws1 `shouldSucceedOn` " "
-      parseTillEnd P.ws1 `shouldSucceedOn` "\t"
-      parseTillEnd P.ws1 `shouldSucceedOn` "\n"
-      parseTillEnd P.ws1 `shouldSucceedOn` "\r"
+      parseTillEnd P.oneOrMoreWhitespaces `shouldSucceedOn` " "
+      parseTillEnd P.oneOrMoreWhitespaces `shouldSucceedOn` "\t"
+      parseTillEnd P.oneOrMoreWhitespaces `shouldSucceedOn` "\n"
+      parseTillEnd P.oneOrMoreWhitespaces `shouldSucceedOn` "\r"
 
     it "more than one" $ do
-      parseTillEnd P.ws1 `shouldSucceedOn` " \n\r\t\t\r\n "
+      parseTillEnd P.oneOrMoreWhitespaces `shouldSucceedOn` " \n\r\t\t\r\n "
 
 
 falseSpec :: Spec

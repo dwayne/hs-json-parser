@@ -5,7 +5,7 @@ module Json.Parser2
     , false, true, null
     , Number(Number), Sign(..), number
     , string
-    , ws1
+    , oneOrMoreWhitespaces
     ) where
 
 import qualified Data.Char as Char
@@ -293,11 +293,11 @@ lexeme = L.lexeme sc
 
 
 sc :: Parser ()
-sc = L.space ws1 empty empty
+sc = L.space oneOrMoreWhitespaces empty empty
 
 
-ws1 :: Parser ()
-ws1 =
+oneOrMoreWhitespaces :: Parser ()
+oneOrMoreWhitespaces =
   --
   -- ws = 1*(
   --   %x20 / ; Space
