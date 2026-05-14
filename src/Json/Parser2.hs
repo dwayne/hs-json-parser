@@ -4,6 +4,7 @@ module Json.Parser2
     ( Parser, Error
     , false, true, null
     , Number(Number), Sign(..), number
+    , string
     , ws1
     ) where
 
@@ -17,7 +18,7 @@ import Control.Monad (void)
 import Data.Text (Text)
 import Data.Void (Void)
 import Prelude hiding (null)
-import Text.Megaparsec (Parsec, ParseErrorBundle, notFollowedBy, satisfy, takeWhileP, takeWhile1P)
+import Text.Megaparsec (Parsec, ParseErrorBundle, between, choice, many, notFollowedBy, satisfy, takeWhileP, takeWhile1P)
 import Text.Megaparsec.Char (alphaNumChar, char)
 
 
@@ -25,6 +26,125 @@ type Parser = Parsec Void Text
 
 
 type Error = ParseErrorBundle Text Void
+
+
+-- Strings
+
+
+string :: Parser Text
+string =
+  --
+  -- string = quotation-mark *char quotation-mark
+  --
+  -- char = unescaped /
+  --   escape (
+  --     %x22 /            ; "    quotation mark  U+0022
+  --     %x5C /            ; \    reverse solidus U+005C
+  --     %x2F /            ; /    solidus         U+002F
+  --     %x62 /            ; b    backspace       U+0008
+  --     %x66 /            ; f    form feed       U+000C
+  --     %x6E /            ; n    line feed       U+000A
+  --     %x72 /            ; r    carriage return U+000D
+  --     %x74 /            ; t    tab             U+0009
+  --     %x75 4HEXDIG )    ; uXXXX                U+XXXX
+  --
+  -- escape = %x5C         ; \
+  --
+  -- quotation-mark = %x22 ; "
+  --
+  -- unescaped = %x20-21 / %x23-5B / %x5D-10FFFF
+  --
+  lexeme (between quotationMark quotationMark characters)
+  where
+    characters :: Parser Text
+    characters = T.pack <$> many character
+
+    character :: Parser Char
+    character = unescaped <|> escaped
+
+    unescaped :: Parser Char
+    unescaped = satisfy isUnescaped
+
+    isUnescaped :: Char -> Bool
+    isUnescaped ch =
+         ch >= '\x20'
+      && ch <= '\x10FFFF'
+      && ch /= quotationMarkChar
+      && ch /= reverseSolidusChar
+
+    escaped :: Parser Char
+    escaped = reverseSolidus *> escapeCode
+
+    escapeCode :: Parser Char
+    escapeCode = choice
+      [ quotationMark
+      , reverseSolidus
+      , solidus
+      , backspace
+      , formFeed
+      , lineFeed
+      , carriageReturn
+      , tab
+      , unicodeEscape
+      ]
+
+    quotationMark :: Parser Char
+    quotationMark = char quotationMarkChar
+
+    quotationMarkChar :: Char
+    quotationMarkChar = '\x22'
+
+    reverseSolidus :: Parser Char
+    reverseSolidus = char reverseSolidusChar
+
+    reverseSolidusChar :: Char
+    reverseSolidusChar = '\x5C'
+
+    solidus :: Parser Char
+    solidus = char '/'
+
+    backspace :: Parser Char
+    backspace = '\x08' <$ char 'b'
+
+    formFeed :: Parser Char
+    formFeed = '\x0C' <$ char 'f'
+
+    lineFeed :: Parser Char
+    lineFeed = '\x0A' <$ char 'n'
+
+    carriageReturn :: Parser Char
+    carriageReturn = '\x0D' <$ char 'r'
+
+    tab :: Parser Char
+    tab = '\x09' <$ char 't'
+
+    unicodeEscape :: Parser Char
+    unicodeEscape = fromCodePoint <$ char 'u' <*> hexDigit <*> hexDigit <*> hexDigit <*> hexDigit
+
+    fromCodePoint :: Char -> Char -> Char -> Char -> Char
+    fromCodePoint a b c d =
+      let
+        --
+        -- N.B. The performance of this could probably be improved by using bit shifts.
+        --
+        -- The key insight is to notice that 16^3 = (2^4)^3 = 2^(4*3) = 2^12.
+        --
+        -- Hence,
+        --
+        --   Char.digitToInt a * 4096 == Char.digitToInt a `shiftL` 12
+        --
+        -- , where shiftL comes from Data.Bits.
+        --
+        n =
+            Char.digitToInt a * 4096 -- (4096 = 16^3)
+          + Char.digitToInt b * 256  -- ( 256 = 16^2)
+          + Char.digitToInt c * 16   -- (  16 = 16^1)
+          + Char.digitToInt d        -- (   1 = 16^0)
+      in
+      Char.chr n
+
+    hexDigit :: Parser Char
+    hexDigit = satisfy Char.isHexDigit
 
 
 -- Numbers
