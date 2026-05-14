@@ -240,8 +240,8 @@ true :: Parser Bool
 true = True <$ keyword "true"
 
 
-null :: Parser ()
-null = void $ keyword "null"
+null :: Parser Text
+null = keyword "null"
 
 
 -- Structural characters
