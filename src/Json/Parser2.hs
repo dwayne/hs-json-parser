@@ -2,7 +2,8 @@
 
 module Json.Parser2
     ( Parser, Error
-    , false, true, null
+    , Json(..), json
+    , null, false, true, boolean
     , Number(Number), Sign(..), number
     , string
     , oneOrMoreWhitespaces
@@ -26,6 +27,128 @@ type Parser = Parsec Void Text
 
 
 type Error = ParseErrorBundle Text Void
+
+
+-- Json
+
+
+data Json
+  = JsonNull
+  | JsonBoolean Bool
+  | JsonNumber Number
+  | JsonString Text
+  deriving (Eq, Show)
+
+
+json :: Parser Json
+json =
+  choice
+    [ JsonNull <$ null
+    , JsonBoolean <$> boolean
+    , JsonNumber <$> number
+    , JsonString <$> string
+    ]
+
+
+-- Literals
+
+
+null :: Parser Text
+null = keyword "null"
+
+
+false :: Parser Bool
+false = False <$ keyword "false"
+
+
+true :: Parser Bool
+true = True <$ keyword "true"
+
+
+boolean :: Parser Bool
+boolean = false <|> true
+
+
+-- Numbers
+
+
+data Number
+  = Number
+      { numSign :: Sign
+      , numDigits :: Text
+      , numFraction :: Maybe Text
+      , numExponent :: Maybe (Sign, Text)
+      }
+  deriving (Eq, Show)
+
+
+data Sign
+  = Plus
+  | Minus
+  deriving (Eq, Show)
+
+
+number :: Parser Number
+number =
+  --
+  -- number = [ minus ] int [ frac ] [ exp ]
+  --
+  -- minus = %x2D         ; -
+  --
+  -- int      = zero / ( digit1-9 *DIGIT )
+  -- zero     = %x30      ; 0
+  -- digit1-9 = %x31-39   ; 1-9
+  --
+  -- frac          = decimal-point 1*DIGIT
+  -- decimal-point = %x2E ; .
+  --
+  -- exp  = e [ minus / plus ] 1*DIGIT
+  -- e    = %x65 / %x45   ; e E
+  -- plus = %x2B          ; +
+  --
+  Number <$> leadingSign <*> naturalNumber <*> optional fractionalPart <*> optional exponentPart
+  where
+    leadingSign :: Parser Sign
+    leadingSign = minus <|> pure Plus
+
+    naturalNumber :: Parser Text
+    naturalNumber = zero <|> positiveNumber
+
+    zero :: Parser Text
+    zero = Char.string "0"
+
+    positiveNumber :: Parser Text
+    positiveNumber = T.cons <$> oneToNine <*> zeroOrMoreDigits
+
+    oneToNine :: Parser Char
+    oneToNine = satisfy isNonZeroDigit
+
+    isNonZeroDigit :: Char -> Bool
+    isNonZeroDigit ch = Char.isDigit ch && ch /= '0'
+
+    zeroOrMoreDigits :: Parser Text
+    zeroOrMoreDigits = takeWhileP (Just "digit") Char.isDigit
+
+    fractionalPart :: Parser Text
+    fractionalPart = char '.' *> oneOrMoreDigits
+
+    exponentPart :: Parser (Sign, Text)
+    exponentPart = (,) <$ e <*> exponentSign <*> oneOrMoreDigits
+
+    e :: Parser Char
+    e = char 'E' <|> char 'e'
+
+    exponentSign :: Parser Sign
+    exponentSign = minus <|> plus <|> pure Plus
+
+    minus :: Parser Sign
+    minus = Minus <$ char '-'
+
+    plus :: Parser Sign
+    plus = Plus <$ char '+'
+
+    oneOrMoreDigits :: Parser Text
+    oneOrMoreDigits = takeWhile1P (Just "digit") Char.isDigit
 
 
 -- Strings
@@ -147,103 +270,6 @@ string =
     hexDigit = satisfy Char.isHexDigit
 
 
--- Numbers
-
-
-data Number
-  = Number
-      { numSign :: Sign
-      , numDigits :: Text
-      , numFraction :: Maybe Text
-      , numExponent :: Maybe (Sign, Text)
-      }
-  deriving (Eq, Show)
-
-
-data Sign
-  = Plus
-  | Minus
-  deriving (Eq, Show)
-
-
-number :: Parser Number
-number =
-  --
-  -- number = [ minus ] int [ frac ] [ exp ]
-  --
-  -- minus = %x2D         ; -
-  --
-  -- int      = zero / ( digit1-9 *DIGIT )
-  -- zero     = %x30      ; 0
-  -- digit1-9 = %x31-39   ; 1-9
-  --
-  -- frac          = decimal-point 1*DIGIT
-  -- decimal-point = %x2E ; .
-  --
-  -- exp  = e [ minus / plus ] 1*DIGIT
-  -- e    = %x65 / %x45   ; e E
-  -- plus = %x2B          ; +
-  --
-  Number <$> leadingSign <*> naturalNumber <*> optional fractionalPart <*> optional exponentPart
-  where
-    leadingSign :: Parser Sign
-    leadingSign = minus <|> pure Plus
-
-    naturalNumber :: Parser Text
-    naturalNumber = zero <|> positiveNumber
-
-    zero :: Parser Text
-    zero = Char.string "0"
-
-    positiveNumber :: Parser Text
-    positiveNumber = T.cons <$> oneToNine <*> zeroOrMoreDigits
-
-    oneToNine :: Parser Char
-    oneToNine = satisfy isNonZeroDigit
-
-    isNonZeroDigit :: Char -> Bool
-    isNonZeroDigit ch = Char.isDigit ch && ch /= '0'
-
-    zeroOrMoreDigits :: Parser Text
-    zeroOrMoreDigits = takeWhileP (Just "digit") Char.isDigit
-
-    fractionalPart :: Parser Text
-    fractionalPart = char '.' *> oneOrMoreDigits
-
-    exponentPart :: Parser (Sign, Text)
-    exponentPart = (,) <$ e <*> exponentSign <*> oneOrMoreDigits
-
-    e :: Parser Char
-    e = char 'E' <|> char 'e'
-
-    exponentSign :: Parser Sign
-    exponentSign = minus <|> plus <|> pure Plus
-
-    minus :: Parser Sign
-    minus = Minus <$ char '-'
-
-    plus :: Parser Sign
-    plus = Plus <$ char '+'
-
-    oneOrMoreDigits :: Parser Text
-    oneOrMoreDigits = takeWhile1P (Just "digit") Char.isDigit
-
-
--- Literals
-
-
-false :: Parser Bool
-false = False <$ keyword "false"
-
-
-true :: Parser Bool
-true = True <$ keyword "true"
-
-
-null :: Parser Text
-null = keyword "null"
-
-
 -- Structural characters
 
 
@@ -255,6 +281,11 @@ beginArray =
 endArray :: Parser Text
 endArray =
   symbol "]" -- right square bracket
+
+
+valueSeparator :: Parser Text
+valueSeparator =
+  symbol "," -- comma
 
 
 beginObject :: Parser Text
@@ -270,11 +301,6 @@ endObject =
 nameSeparator :: Parser Text
 nameSeparator =
   symbol ":" -- colon
-
-
-valueSeparator :: Parser Text
-valueSeparator =
-  symbol "," -- comma
 
 
 -- Lexeme parsers

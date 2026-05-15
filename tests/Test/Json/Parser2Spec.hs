@@ -21,11 +21,12 @@ spec :: Spec
 spec =
   describe "Parser" $ do
     oneOrMoreWhitespacesSpec
+    nullSpec
     falseSpec
     trueSpec
-    nullSpec
     numberSpec
     stringSpec
+    jsonSpec
 
 
 oneOrMoreWhitespacesSpec :: Spec
@@ -42,6 +43,19 @@ oneOrMoreWhitespacesSpec =
 
     it "more than one" $ do
       parseTillEnd P.oneOrMoreWhitespaces `shouldSucceedOn` " \n\r\t\t\r\n "
+
+
+nullSpec :: Spec
+nullSpec =
+  describe "null" $ do
+    it "parses \"null\"" $ do
+      parseTillEnd P.null `shouldSucceedOn` "null"
+      parseTillEnd P.null `shouldSucceedOn` "null "
+      parseTillEnd P.null `shouldSucceedOn` "null  "
+
+      parseTillEnd P.null `shouldFailOn` "NULL"
+      parseTillEnd P.null `shouldFailOn` "Null"
+      parseTillEnd P.null `shouldFailOn` "nullish"
 
 
 falseSpec :: Spec
@@ -68,19 +82,6 @@ trueSpec =
       parseTillEnd P.true `shouldFailOn` "TRUE"
       parseTillEnd P.true `shouldFailOn` "True"
       parseTillEnd P.true `shouldFailOn` "trueish"
-
-
-nullSpec :: Spec
-nullSpec =
-  describe "null" $ do
-    it "parses \"null\"" $ do
-      parseTillEnd P.null `shouldSucceedOn` "null"
-      parseTillEnd P.null `shouldSucceedOn` "null "
-      parseTillEnd P.null `shouldSucceedOn` "null  "
-
-      parseTillEnd P.null `shouldFailOn` "NULL"
-      parseTillEnd P.null `shouldFailOn` "Null"
-      parseTillEnd P.null `shouldFailOn` "nullish"
 
 
 numberSpec :: Spec
@@ -184,6 +185,17 @@ stringSpec =
       parseTillEnd P.string "\"\\uD800\"" `shouldParse` "\xD800"
       parseTillEnd P.string "\"\\uDFFF\"" `shouldParse` "\xDFFF"
       parseTillEnd P.string "\"\\uDEAD\"" `shouldParse` "\xDEAD"
+
+
+jsonSpec :: Spec
+jsonSpec =
+  describe "json" $ do
+    it "parses JSON" $ do
+      parseTillEnd P.json "null" `shouldParse` P.JsonNull
+      parseTillEnd P.json "false" `shouldParse` P.JsonBoolean False
+      parseTillEnd P.json "true" `shouldParse` P.JsonBoolean True
+      parseTillEnd P.json "123" `shouldParse` P.JsonNumber (P.Number P.Plus "123" Nothing Nothing)
+      parseTillEnd P.json "\"Hello\"" `shouldParse` P.JsonString "Hello"
 
 
 -- Helpers
