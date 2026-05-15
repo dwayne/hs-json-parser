@@ -26,6 +26,7 @@ spec =
     trueSpec
     numberSpec
     stringSpec
+    arraySpec
     jsonSpec
 
 
@@ -195,6 +196,41 @@ stringSpec =
       parseTillEnd P.string "\"\" " `shouldParse` ""
 
 
+arraySpec :: Spec
+arraySpec =
+  describe "array" $ do
+    it "parses the empty array" $ do
+      parseTillEnd P.array "[]" `shouldParse` []
+      parseTillEnd P.array "[ ]" `shouldParse` []
+
+    it "parses non-empty arrays" $ do
+      parseTillEnd P.array "[ null ]" `shouldParse` [ P.JsonNull ]
+      parseTillEnd P.array "[ false, true ]" `shouldParse` [ P.JsonBoolean False, P.JsonBoolean True ]
+      parseTillEnd P.array "[ 1, 2, 3, 4, 5 ]" `shouldParse`
+        [ P.JsonNumber (P.Number P.Plus "1" Nothing Nothing)
+        , P.JsonNumber (P.Number P.Plus "2" Nothing Nothing)
+        , P.JsonNumber (P.Number P.Plus "3" Nothing Nothing)
+        , P.JsonNumber (P.Number P.Plus "4" Nothing Nothing)
+        , P.JsonNumber (P.Number P.Plus "5" Nothing Nothing)
+        ]
+      parseTillEnd P.array "[]" `shouldParse` []
+
+    it "parses nested arrays" $ do
+      parseTillEnd P.array "[[[]]]" `shouldParse` [ P.JsonArray [ P.JsonArray [] ] ]
+
+    it "parses heterogeneous arrays" $ do
+      parseTillEnd P.array "[ null, false, true, 1, [] ]" `shouldParse`
+        [ P.JsonNull
+        , P.JsonBoolean False
+        , P.JsonBoolean True
+        , P.JsonNumber (P.Number P.Plus "1" Nothing Nothing)
+        , P.JsonArray []
+        ]
+
+    it "consumes trailing spaces" $ do
+      parseTillEnd P.array "[] " `shouldParse` []
+
+
 jsonSpec :: Spec
 jsonSpec =
   describe "json" $ do
@@ -204,6 +240,10 @@ jsonSpec =
       parseTillEnd P.json "true" `shouldParse` P.JsonBoolean True
       parseTillEnd P.json "123" `shouldParse` P.JsonNumber (P.Number P.Plus "123" Nothing Nothing)
       parseTillEnd P.json "\"Hello\"" `shouldParse` P.JsonString "Hello"
+      parseTillEnd P.json "[[], null]" `shouldParse` P.JsonArray [ P.JsonArray [], P.JsonNull ]
+
+    it "consumes trailing spaces" $ do
+      parseTillEnd P.json "null " `shouldParse` P.JsonNull
 
 
 -- Helpers

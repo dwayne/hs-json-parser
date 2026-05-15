@@ -6,6 +6,7 @@ module Json.Parser2
     , null, false, true, boolean
     , Number(Number), Sign(..), number
     , string
+    , array
     , oneOrMoreWhitespaces
     ) where
 
@@ -19,7 +20,7 @@ import Control.Monad (void)
 import Data.Text (Text)
 import Data.Void (Void)
 import Prelude hiding (null)
-import Text.Megaparsec (Parsec, ParseErrorBundle, between, choice, many, notFollowedBy, satisfy, takeWhileP, takeWhile1P)
+import Text.Megaparsec (Parsec, ParseErrorBundle, between, choice, many, notFollowedBy, satisfy, sepBy, takeWhileP, takeWhile1P)
 import Text.Megaparsec.Char (alphaNumChar, char)
 
 
@@ -37,6 +38,7 @@ data Json
   | JsonBoolean Bool
   | JsonNumber Number
   | JsonString Text
+  | JsonArray Array
   deriving (Eq, Show)
 
 
@@ -47,6 +49,7 @@ json =
     , JsonBoolean <$> boolean
     , JsonNumber <$> number
     , JsonString <$> string
+    , JsonArray <$> array
     ]
 
 
@@ -301,6 +304,20 @@ endObject =
 nameSeparator :: Parser Text
 nameSeparator =
   symbol ":" -- colon
+
+
+-- Arrays
+
+
+type Array = [Json]
+
+
+array :: Parser Array
+array =
+  --
+  -- array = begin-array [ value *( value-separator value ) ] end-array
+  --
+  between beginArray endArray (json `sepBy` valueSeparator)
 
 
 -- Lexeme parsers
