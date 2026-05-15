@@ -7,6 +7,7 @@ module Json.Parser2
     , Number(Number), Sign(..), number
     , string
     , array
+    , object
     , oneOrMoreWhitespaces
     ) where
 
@@ -39,6 +40,7 @@ data Json
   | JsonNumber Number
   | JsonString Text
   | JsonArray Array
+  | JsonObject Object
   deriving (Eq, Show)
 
 
@@ -50,6 +52,7 @@ json =
     , JsonNumber <$> number
     , JsonString <$> string
     , JsonArray <$> array
+    , JsonObject <$> object
     ]
 
 
@@ -318,6 +321,24 @@ array =
   -- array = begin-array [ value *( value-separator value ) ] end-array
   --
   between beginArray endArray (json `sepBy` valueSeparator)
+
+
+-- Objects
+
+
+type Object = [(Text, Json)]
+
+
+object :: Parser Object
+object =
+  --
+  -- object = begin-object [ member *( value-separator member ) ] end-object
+  -- member = string name-separator value
+  --
+  between beginObject endObject (member `sepBy` valueSeparator)
+  where
+    member :: Parser (Text, Json)
+    member = (,) <$> string <* nameSeparator <*> json
 
 
 -- Lexeme parsers

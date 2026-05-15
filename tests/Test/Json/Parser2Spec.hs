@@ -27,6 +27,7 @@ spec =
     numberSpec
     stringSpec
     arraySpec
+    objectSpec
     jsonSpec
 
 
@@ -204,6 +205,7 @@ arraySpec =
       parseTillEnd P.array "[ ]" `shouldParse` []
 
     it "parses non-empty arrays" $ do
+      parseTillEnd P.array "[null]" `shouldParse` [ P.JsonNull ]
       parseTillEnd P.array "[ null ]" `shouldParse` [ P.JsonNull ]
       parseTillEnd P.array "[ false, true ]" `shouldParse` [ P.JsonBoolean False, P.JsonBoolean True ]
       parseTillEnd P.array "[ 1, 2, 3, 4, 5 ]" `shouldParse`
@@ -219,16 +221,47 @@ arraySpec =
       parseTillEnd P.array "[[[]]]" `shouldParse` [ P.JsonArray [ P.JsonArray [] ] ]
 
     it "parses heterogeneous arrays" $ do
-      parseTillEnd P.array "[ null, false, true, 1, [] ]" `shouldParse`
+      parseTillEnd P.array "[ null, false, true, 1, [], {} ]" `shouldParse`
         [ P.JsonNull
         , P.JsonBoolean False
         , P.JsonBoolean True
         , P.JsonNumber (P.Number P.Plus "1" Nothing Nothing)
         , P.JsonArray []
+        , P.JsonObject []
         ]
 
     it "consumes trailing spaces" $ do
       parseTillEnd P.array "[] " `shouldParse` []
+
+
+objectSpec :: Spec
+objectSpec =
+  describe "object" $ do
+    it "parses the empty object" $ do
+      parseTillEnd P.object "{}" `shouldParse` []
+      parseTillEnd P.object "{ }" `shouldParse` []
+
+    it "parses non-empty objects" $ do
+      parseTillEnd P.object "{\"a\":null}" `shouldParse` [( "a", P.JsonNull )]
+      parseTillEnd P.object "{ \"a\": null }" `shouldParse` [( "a", P.JsonNull )]
+      parseTillEnd P.object
+        "{ \"b\": false \
+        \, \"c\": true  \
+        \, \"d\": 5     \
+        \, \"e\": []    \
+        \}              "
+        `shouldParse`
+        [ ( "b", P.JsonBoolean False )
+        , ( "c", P.JsonBoolean True )
+        , ( "d", P.JsonNumber (P.Number P.Plus "5" Nothing Nothing) )
+        , ( "e", P.JsonArray [] )
+        ]
+
+    it "parses nested objects" $ do
+      parseTillEnd P.object "{ \"x\": { \"y\": {} } }" `shouldParse` [( "x", P.JsonObject [( "y", P.JsonObject [] )] )]
+
+    it "consumes trailing spaces" $ do
+      parseTillEnd P.object "{} " `shouldParse` []
 
 
 jsonSpec :: Spec
@@ -241,6 +274,7 @@ jsonSpec =
       parseTillEnd P.json "123" `shouldParse` P.JsonNumber (P.Number P.Plus "123" Nothing Nothing)
       parseTillEnd P.json "\"Hello\"" `shouldParse` P.JsonString "Hello"
       parseTillEnd P.json "[[], null]" `shouldParse` P.JsonArray [ P.JsonArray [], P.JsonNull ]
+      parseTillEnd P.json "{ \"a\": null }" `shouldParse` P.JsonObject [( "a", P.JsonNull )]
 
     it "consumes trailing spaces" $ do
       parseTillEnd P.json "null " `shouldParse` P.JsonNull
