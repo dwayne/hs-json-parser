@@ -1,21 +1,15 @@
 {-# LANGUAGE OverloadedStrings #-}
 
 module Json.Parser
-  ( Parser, Error
-  , Json(..), json
-  , Object, object
-  , Array, array
-  , string
-  , Number(..), number
-  , SignedNatural(..), Sign(..), signedNatural
-  , FractionalPart(..), fractionalPart
-  , ExponentPart(..), exponentPart
-  , boolean
-  , null
-  , ws
-  ) where
-
-import Prelude hiding (exponent, null)
+    ( Parser, Error
+    , Json(..), json
+    , null, false, true, boolean
+    , Number(Number), Sign(..), number
+    , string
+    , array
+    , object
+    , oneOrMoreWhitespaces
+    ) where
 
 import qualified Data.Char as Char
 import qualified Data.Text as T
@@ -26,63 +20,71 @@ import Control.Applicative ((<|>), empty)
 import Control.Monad (void)
 import Data.Text (Text)
 import Data.Void (Void)
-import Numeric (readHex)
-import Text.Megaparsec
-  ( (<?>)
-  , Parsec, ParseErrorBundle
-  , between, choice, many, sepBy
-  , notFollowedBy
-  , satisfy, takeWhileP, takeWhile1P
-  )
+import Prelude hiding (null)
+import Text.Megaparsec (Parsec, ParseErrorBundle, between, choice, many, notFollowedBy, satisfy, sepBy, takeWhileP, takeWhile1P)
 import Text.Megaparsec.Char (alphaNumChar, char)
 
 
 type Parser = Parsec Void Text
+
+
 type Error = ParseErrorBundle Text Void
 
 
+-- Json
+
+
 data Json
-  = JsonObject Object
-  | JsonArray Array
-  | JsonString Text
-  | JsonNumber Number
+  = JsonNull
   | JsonBoolean Bool
-  | JsonNull
+  | JsonNumber Number
+  | JsonString Text
+  | JsonArray Array
+  | JsonObject Object
   deriving (Eq, Show)
 
 
-type Object = [(Text, Json)]
+json :: Parser Json
+json =
+  choice
+    [ JsonNull <$ null
+    , JsonBoolean <$> boolean
+    , JsonNumber <$> number
+    , JsonString <$> string
+    , JsonArray <$> array
+    , JsonObject <$> object
+    ]
 
 
-type Array = [Json]
+-- Literals
 
 
-data Number = Number SignedNatural (Maybe FractionalPart) (Maybe ExponentPart)
-  deriving (Eq, Show)
+null :: Parser Text
+null = keyword "null"
 
 
-data SignedNatural = SignedNatural Sign Text
-  deriving (Eq, Show)
+false :: Parser Bool
+false = False <$ keyword "false"
 
 
---
--- FractionalPart n represents [n] * 10.0 ^^ (- length n)
---
--- where [n] is the natural number corresponding to n
---
--- For e.g.
---
--- FractionalPart "5" ["5"] * 10.0 ^^ (-1) = 5 * 10.0 ^^ (-1) = 0.5
---
-newtype FractionalPart = FractionalPart Text
-  deriving (Eq, Show)
+true :: Parser Bool
+true = True <$ keyword "true"
 
 
---
--- ExponentPart Plus "3" represents 10.0 ^^ 3
--- ExponentPart Minus "3" represents 10.0 ^^ (-3)
---
-data ExponentPart = ExponentPart Sign Text
+boolean :: Parser Bool
+boolean = false <|> true
+
+
+-- Numbers
+
+
+data Number
+  = Number
+      { numSign :: Sign
+      , numDigits :: Text
+      , numFraction :: Maybe Text
+      , numExponent :: Maybe (Sign, Text)
+      }
   deriving (Eq, Show)
 
 
@@ -92,326 +94,290 @@ data Sign
   deriving (Eq, Show)
 
 
-json :: Parser Json
-json =
+number :: Parser Number
+number =
   --
-  -- json
-  --     ws element
+  -- number = [ minus ] int [ frac ] [ exp ]
   --
-  ws *> element
+  -- minus = %x2D         ; -
+  --
+  -- int      = zero / ( digit1-9 *DIGIT )
+  -- zero     = %x30      ; 0
+  -- digit1-9 = %x31-39   ; 1-9
+  --
+  -- frac          = decimal-point 1*DIGIT
+  -- decimal-point = %x2E ; .
+  --
+  -- exp  = e [ minus / plus ] 1*DIGIT
+  -- e    = %x65 / %x45   ; e E
+  -- plus = %x2B          ; +
+  --
+  lexeme (Number <$> leadingSign <*> naturalNumber <*> optional fractionalPart <*> optional exponentPart)
+  where
+    leadingSign :: Parser Sign
+    leadingSign = minus <|> pure Plus
+
+    naturalNumber :: Parser Text
+    naturalNumber = zero <|> positiveNumber
+
+    zero :: Parser Text
+    zero = Char.string "0"
+
+    positiveNumber :: Parser Text
+    positiveNumber = T.cons <$> oneToNine <*> zeroOrMoreDigits
+
+    oneToNine :: Parser Char
+    oneToNine = satisfy isNonZeroDigit
+
+    isNonZeroDigit :: Char -> Bool
+    isNonZeroDigit ch = Char.isDigit ch && ch /= '0'
+
+    zeroOrMoreDigits :: Parser Text
+    zeroOrMoreDigits = takeWhileP (Just "digit") Char.isDigit
+
+    fractionalPart :: Parser Text
+    fractionalPart = char '.' *> oneOrMoreDigits
+
+    exponentPart :: Parser (Sign, Text)
+    exponentPart = (,) <$ e <*> exponentSign <*> oneOrMoreDigits
+
+    e :: Parser Char
+    e = char 'E' <|> char 'e'
+
+    exponentSign :: Parser Sign
+    exponentSign = minus <|> plus <|> pure Plus
+
+    minus :: Parser Sign
+    minus = Minus <$ char '-'
+
+    plus :: Parser Sign
+    plus = Plus <$ char '+'
+
+    oneOrMoreDigits :: Parser Text
+    oneOrMoreDigits = takeWhile1P (Just "digit") Char.isDigit
 
 
-element :: Parser Json
-element =
-  --
-  -- element
-  --     value ws
-  --
-  lexeme value
+-- Strings
 
 
-value :: Parser Json
-value =
+string :: Parser Text
+string =
   --
-  -- value
-  --     object
-  --     array
-  --     string
-  --     number
-  --     "true"
-  --     "false"
-  --     "null"
+  -- string = quotation-mark *char quotation-mark
   --
-  choice
-    [ JsonObject <$> object
-    , JsonArray <$> array
-    , JsonString <$> string
-    , JsonNumber <$> number
-    , JsonBoolean <$> boolean
-    , JsonNull <$ null
-    ]
+  -- char = unescaped /
+  --   escape (
+  --     %x22 /            ; "    quotation mark  U+0022
+  --     %x5C /            ; \    reverse solidus U+005C
+  --     %x2F /            ; /    solidus         U+002F
+  --     %x62 /            ; b    backspace       U+0008
+  --     %x66 /            ; f    form feed       U+000C
+  --     %x6E /            ; n    line feed       U+000A
+  --     %x72 /            ; r    carriage return U+000D
+  --     %x74 /            ; t    tab             U+0009
+  --     %x75 4HEXDIG )    ; uXXXX                U+XXXX
+  --
+  -- escape = %x5C         ; \
+  --
+  -- quotation-mark = %x22 ; "
+  --
+  -- unescaped = %x20-21 / %x23-5B / %x5D-10FFFF
+  --
+  lexeme (between quotationMark quotationMark characters)
+  where
+    characters :: Parser Text
+    characters = T.pack <$> many character
+
+    character :: Parser Char
+    character = unescaped <|> escaped
+
+    unescaped :: Parser Char
+    unescaped = satisfy isUnescaped
+
+    isUnescaped :: Char -> Bool
+    isUnescaped ch =
+         ch >= '\x20'
+      && ch <= '\x10FFFF'
+      && ch /= quotationMarkChar
+      && ch /= reverseSolidusChar
+
+    escaped :: Parser Char
+    escaped = reverseSolidus *> escapeCode
+
+    escapeCode :: Parser Char
+    escapeCode = choice
+      [ quotationMark
+      , reverseSolidus
+      , solidus
+      , backspace
+      , formFeed
+      , lineFeed
+      , carriageReturn
+      , tab
+      , unicodeEscape
+      ]
+
+    quotationMark :: Parser Char
+    quotationMark = char quotationMarkChar
+
+    quotationMarkChar :: Char
+    quotationMarkChar = '\x22'
+
+    reverseSolidus :: Parser Char
+    reverseSolidus = char reverseSolidusChar
+
+    reverseSolidusChar :: Char
+    reverseSolidusChar = '\x5C'
+
+    solidus :: Parser Char
+    solidus = char '/'
+
+    backspace :: Parser Char
+    backspace = '\x08' <$ char 'b'
+
+    formFeed :: Parser Char
+    formFeed = '\x0C' <$ char 'f'
+
+    lineFeed :: Parser Char
+    lineFeed = '\x0A' <$ char 'n'
+
+    carriageReturn :: Parser Char
+    carriageReturn = '\x0D' <$ char 'r'
+
+    tab :: Parser Char
+    tab = '\x09' <$ char 't'
+
+    unicodeEscape :: Parser Char
+    unicodeEscape = fromCodePoint <$ char 'u' <*> hexDigit <*> hexDigit <*> hexDigit <*> hexDigit
+
+    fromCodePoint :: Char -> Char -> Char -> Char -> Char
+    fromCodePoint a b c d =
+      let
+        --
+        -- N.B. The performance of this could probably be improved by using bit shifts.
+        --
+        -- The key insight is to notice that 16^3 = (2^4)^3 = 2^(4*3) = 2^12.
+        --
+        -- Hence,
+        --
+        --   Char.digitToInt a * 4096 == Char.digitToInt a `shiftL` 12
+        --
+        -- , where shiftL comes from Data.Bits.
+        --
+        n =
+            Char.digitToInt a * 4096 -- (4096 = 16^3)
+          + Char.digitToInt b * 256  -- ( 256 = 16^2)
+          + Char.digitToInt c * 16   -- (  16 = 16^1)
+          + Char.digitToInt d        -- (   1 = 16^0)
+      in
+      Char.chr n
+
+    hexDigit :: Parser Char
+    hexDigit = satisfy Char.isHexDigit
 
 
-object :: Parser Object
-object =
-  --
-  -- object
-  --     '{' ws '}' ws
-  --     '{' ws members '}' ws
-  --
-  between (symbol "{") (symbol "}") members
+-- Structural characters
 
 
-members :: Parser [(Text, Json)]
-members =
-  --
-  -- members
-  --     member
-  --     member ',' ws members
-  --
-  member `sepBy` symbol ","
+beginArray :: Parser Text
+beginArray =
+  symbol "[" -- left square bracket
 
 
-member :: Parser (Text, Json)
-member =
-  --
-  -- member
-  --     string ws ':' ws element
-  --
-  (,) <$> lexeme string <*> (symbol ":" *> element)
+endArray :: Parser Text
+endArray =
+  symbol "]" -- right square bracket
+
+
+valueSeparator :: Parser Text
+valueSeparator =
+  symbol "," -- comma
+
+
+beginObject :: Parser Text
+beginObject =
+  symbol "{" -- left curly bracket
+
+
+endObject :: Parser Text
+endObject =
+  symbol "}" -- right curly bracket
+
+
+nameSeparator :: Parser Text
+nameSeparator =
+  symbol ":" -- colon
+
+
+-- Arrays
+
+
+type Array = [Json]
 
 
 array :: Parser Array
 array =
   --
-  -- array
-  --     '[' ws ']' ws
-  --     '[' ws elements ']' ws
+  -- array = begin-array [ value *( value-separator value ) ] end-array
   --
-  between (symbol "[") (symbol "]") elements
+  between beginArray endArray (json `sepBy` valueSeparator)
 
 
-elements :: Parser [Json]
-elements =
+-- Objects
+
+
+type Object = [(Text, Json)]
+
+
+object :: Parser Object
+object =
   --
-  -- elements
-  --     element
-  --     element ',' ws elements
+  -- object = begin-object [ member *( value-separator member ) ] end-object
+  -- member = string name-separator value
   --
-  element `sepBy` symbol ","
-
-
-string :: Parser Text
-string = between (char '"') (char '"') characters
-
-
-characters :: Parser Text
-characters = T.pack <$> many character
-
-
-character :: Parser Char
-character =
-  regular <|> char '\\' *> escape
-
-
-regular :: Parser Char
-regular =
-  --
-  -- '0020' . '10FFFF' - '"' - '\'
-  --
-  satisfy isRegular
+  between beginObject endObject (member `sepBy` valueSeparator)
   where
-    isRegular :: Char -> Bool
-    isRegular ch = ch >= '\x0020' && ch <= '\x10FFFF' && ch /= '\x0022' && ch /= '\x005C'
+    member :: Parser (Text, Json)
+    member = (,) <$> string <* nameSeparator <*> json
 
 
-escape :: Parser Char
-escape =
-  choice
-    [ char '\x0022'        -- quotation mark
-    , char '\x005C'        -- reverse solidus (backslash)
-    , char '\x002F'        -- solidus (slash)
-    , '\x0008' <$ char 'b' -- backspace
-    , '\x000C' <$ char 'f' -- form feed
-    , '\x000A' <$ char 'n' -- line feed (newline)
-    , '\x000D' <$ char 'r' -- carriage return
-    , '\x0009' <$ char 't' -- horizontal tab
-    , hexToChar <$ char 'u' <*> hex <*> hex <*> hex <*> hex
-    ]
-  where
-    hexToChar :: Char -> Char -> Char -> Char -> Char
-    hexToChar a b c d =
-      case readHex [a, b, c, d] of
-        [(n, "")] -> Char.chr n
-
-        --
-        -- '\xFFFD' or replacement character
-        -- is the standard Unicode substitute for unrepresentable/invalid input
-        --
-        _ -> '\xFFFD'
-
-    hex :: Parser Char
-    hex =
-      --
-      -- hex
-      --     digit
-      --     'A' . 'F'
-      --     'a' . 'f'
-      --
-      satisfy Char.isHexDigit <?> "hex"
-
-
-number :: Parser Number
-number =
-  --
-  -- number
-  --     integer fraction exponent
-  --
-  Number <$> signedNatural <*> fraction <*> exponent <?> "number"
-
-
-signedNatural :: Parser SignedNatural
-signedNatural =
-  --
-  -- integer
-  --     digit
-  --     onenine digits
-  --     '-' digit
-  --     '-' onenine digits
-  --
-  -- digits
-  --     digit
-  --     digit digits
-  --
-  -- digit
-  --     '0'
-  --     onenine
-  --
-  -- onenine
-  --     '1' . '9'
-  --
-  SignedNatural <$> sign <*> (zero <|> positiveNumber)
-  where
-    sign :: Parser Sign
-    sign = Minus <$ char '-' <|> pure Plus <?> "sign"
-
-    zero :: Parser Text
-    zero = "0" <$ char '0' <?> "zero"
-
-    positiveNumber :: Parser Text
-    positiveNumber = T.cons <$> oneNine <*> digits0 <?> "positive number"
-
-    oneNine :: Parser Char
-    oneNine = satisfy isOneNine <?> "non-zero digit"
-      where
-        isOneNine ch = ch /= '0' && Char.isDigit ch
-
-    --
-    -- zero or more digits
-    --
-    digits0 :: Parser Text
-    digits0 = takeWhileP (Just "digit") Char.isDigit
-
-
-fraction :: Parser (Maybe FractionalPart)
-fraction =
-  --
-  -- fraction
-  --     ""
-  --     '.' digits
-  --
-  optional fractionalPart
-
-
-fractionalPart :: Parser FractionalPart
-fractionalPart =
-  --
-  -- '.' digits
-  --
-  FractionalPart <$> (char '.' *> digits1) <?> "fractional part"
-
-
-exponent :: Parser (Maybe ExponentPart)
-exponent =
-  --
-  -- exponent
-  --     ""
-  --     'E' sign digits
-  --     'e' sign digits
-  --
-  optional exponentPart
-
-
-exponentPart :: Parser ExponentPart
-exponentPart =
-  --
-  -- 'E' sign digits
-  -- 'e' sign digits
-  --
-  ExponentPart <$> (e *> sign) <*> digits1 <?> "exponent part"
-  where
-    e :: Parser Char
-    e = char 'E' <|> char 'e'
-
-    sign :: Parser Sign
-    sign = (Plus <$ char '+') <|> (Minus <$ char '-') <|> pure Plus <?> "sign"
-
-
-digits1 :: Parser Text
-digits1 =
-  --
-  -- one or more digits
-  --
-  takeWhile1P (Just "digit") Char.isDigit
-
-
-boolean :: Parser Bool
-boolean =
-  --
-  -- "true"
-  -- "false"
-  --
-  True <$ keyword "true" <|> False <$ keyword "false" <?> "boolean"
-
-
-null :: Parser ()
-null =
-  --
-  -- "null"
-  --
-  void (keyword "null") <?> "null"
+-- Lexeme parsers
 
 
 keyword :: Text -> Parser Text
-keyword kw = Char.string kw <* notFollowedBy alphaNumChar <?> T.unpack kw
-
-
--- Lexeme
-
-
-lexeme :: Parser a -> Parser a
-lexeme = L.lexeme sc
+keyword kw = lexeme (Char.string kw <* notFollowedBy alphaNumChar)
 
 
 symbol :: Text -> Parser Text
 symbol = L.symbol sc
 
 
+lexeme :: Parser a -> Parser a
+lexeme = L.lexeme sc
+
+
 sc :: Parser ()
-sc = L.space ws1 empty empty
+sc = L.space oneOrMoreWhitespaces empty empty
 
 
-ws :: Parser ()
-ws =
+oneOrMoreWhitespaces :: Parser ()
+oneOrMoreWhitespaces =
   --
-  -- ws
-  --     ""
-  --     '0020' ws
-  --     '000A' ws
-  --     '000D' ws
-  --     '0009' ws
-  --
-  void $ takeWhileP (Just "white space") isSpace
-
-
-ws1 :: Parser ()
-ws1 =
-  --
-  -- ws
-  --     '0020' ws
-  --     '000A' ws
-  --     '000D' ws
-  --     '0009' ws
+  -- ws = 1*(
+  --   %x20 / ; Space
+  --   %x09 / ; Horizontal tab
+  --   %x0A / ; Line feed or New line
+  --   %x0D   ; Carriage return
+  -- )
   --
   void $ takeWhile1P (Just "white space") isSpace
-
-
-isSpace :: Char -> Bool
-isSpace ch =
-     ch == '\x0020'
-  || ch == '\x000A'
-  || ch == '\x000D'
-  || ch == '\x0009'
+  where
+    isSpace :: Char -> Bool
+    isSpace ch =
+         ch == '\x20'
+      || ch == '\x09'
+      || ch == '\x0A'
+      || ch == '\x0D'
 
 
 -- Helpers
