@@ -24,6 +24,7 @@ spec =
     nullSpec
     falseSpec
     trueSpec
+    booleanSpec
     numberSpec
     stringSpec
     arraySpec
@@ -87,6 +88,18 @@ trueSpec =
 
     it "consumes trailing spaces" $ do
       parseTillEnd P.true "true " `shouldParse` True
+
+
+booleanSpec :: Spec
+booleanSpec =
+  describe "boolean" $ do
+    it "parses \"true\" or \"false\"" $ do
+      parseTillEnd P.boolean "true" `shouldParse` True
+      parseTillEnd P.boolean "false" `shouldParse` False
+
+    it "consumes trailing spaces" $ do
+      parseTillEnd P.boolean "true " `shouldParse` True
+      parseTillEnd P.boolean "false " `shouldParse` False
 
 
 numberSpec :: Spec
