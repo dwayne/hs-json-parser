@@ -106,7 +106,7 @@ number =
   -- e    = %x65 / %x45   ; e E
   -- plus = %x2B          ; +
   --
-  Number <$> leadingSign <*> naturalNumber <*> optional fractionalPart <*> optional exponentPart
+  lexeme (Number <$> leadingSign <*> naturalNumber <*> optional fractionalPart <*> optional exponentPart)
   where
     leadingSign :: Parser Sign
     leadingSign = minus <|> pure Plus

@@ -50,12 +50,13 @@ nullSpec =
   describe "null" $ do
     it "parses \"null\"" $ do
       parseTillEnd P.null `shouldSucceedOn` "null"
-      parseTillEnd P.null `shouldSucceedOn` "null "
-      parseTillEnd P.null `shouldSucceedOn` "null  "
 
       parseTillEnd P.null `shouldFailOn` "NULL"
       parseTillEnd P.null `shouldFailOn` "Null"
       parseTillEnd P.null `shouldFailOn` "nullish"
+
+    it "consumes trailing spaces" $ do
+      parseTillEnd P.null `shouldSucceedOn` "null "
 
 
 falseSpec :: Spec
@@ -63,12 +64,13 @@ falseSpec =
   describe "false" $ do
     it "parses \"false\"" $ do
       parseTillEnd P.false "false" `shouldParse` False
-      parseTillEnd P.false "false " `shouldParse` False
-      parseTillEnd P.false "false  " `shouldParse` False
 
       parseTillEnd P.false `shouldFailOn` "FALSE"
       parseTillEnd P.false `shouldFailOn` "False"
       parseTillEnd P.false `shouldFailOn` "falsey"
+
+    it "consumes trailing spaces" $ do
+      parseTillEnd P.false "false " `shouldParse` False
 
 
 trueSpec :: Spec
@@ -76,12 +78,13 @@ trueSpec =
   describe "true" $ do
     it "parses \"true\"" $ do
       parseTillEnd P.true "true" `shouldParse` True
-      parseTillEnd P.true "true " `shouldParse` True
-      parseTillEnd P.true "true  " `shouldParse` True
 
       parseTillEnd P.true `shouldFailOn` "TRUE"
       parseTillEnd P.true `shouldFailOn` "True"
       parseTillEnd P.true `shouldFailOn` "trueish"
+
+    it "consumes trailing spaces" $ do
+      parseTillEnd P.true "true " `shouldParse` True
 
 
 numberSpec :: Spec
@@ -139,6 +142,9 @@ numberSpec =
       parseTillEnd P.number "123.456E00" `shouldParse` P.Number P.Plus "123" (Just "456") (Just (P.Plus, "00"))
       parseTillEnd P.number "123.456E-0" `shouldParse` P.Number P.Plus "123" (Just "456") (Just (P.Minus, "0"))
 
+    it "consumes trailing spaces" $ do
+      parseTillEnd P.number "0 " `shouldParse` P.Number P.Plus "0" Nothing Nothing
+
 
 stringSpec :: Spec
 stringSpec =
@@ -150,7 +156,6 @@ stringSpec =
       parseTillEnd P.string "\" \"" `shouldParse` " "
       parseTillEnd P.string "\"  \"" `shouldParse` "  "
       parseTillEnd P.string "\"   \"" `shouldParse` "   "
-
 
     it "parses unescaped characters" $ do
       parseTillEnd P.string "\"abcdef0123ABC!@#$%\"" `shouldParse` "abcdef0123ABC!@#$%"
@@ -185,6 +190,9 @@ stringSpec =
       parseTillEnd P.string "\"\\uD800\"" `shouldParse` "\xD800"
       parseTillEnd P.string "\"\\uDFFF\"" `shouldParse` "\xDFFF"
       parseTillEnd P.string "\"\\uDEAD\"" `shouldParse` "\xDEAD"
+
+    it "consumes trailing spaces" $ do
+      parseTillEnd P.string "\"\" " `shouldParse` ""
 
 
 jsonSpec :: Spec
