@@ -10,13 +10,6 @@ import Test.Hspec.Megaparsec
 import Text.Megaparsec (parse, eof)
 
 
---
--- TODO:
---
--- - [ ] Improve the descriptions of the test cases (see what I did for stringSpec)
---
-
-
 spec :: Spec
 spec =
   describe "Parser" $ do
@@ -38,13 +31,13 @@ oneOrMoreWhitespacesSpec =
     it "parses zero whitespace characters" $ do
       parseTillEnd P.oneOrMoreWhitespaces `shouldFailOn` ""
 
-    it "one" $ do
+    it "parses one whitespace character" $ do
       parseTillEnd P.oneOrMoreWhitespaces `shouldSucceedOn` " "
       parseTillEnd P.oneOrMoreWhitespaces `shouldSucceedOn` "\t"
       parseTillEnd P.oneOrMoreWhitespaces `shouldSucceedOn` "\n"
       parseTillEnd P.oneOrMoreWhitespaces `shouldSucceedOn` "\r"
 
-    it "more than one" $ do
+    it "parses more than one whitespace character" $ do
       parseTillEnd P.oneOrMoreWhitespaces `shouldSucceedOn` " \n\r\t\t\r\n "
 
 
@@ -105,13 +98,13 @@ booleanSpec =
 numberSpec :: Spec
 numberSpec =
   describe "number" $ do
-    it "zero" $ do
+    it "parses zero" $ do
       parseTillEnd P.number "0" `shouldParse` P.Number P.Plus "0" Nothing Nothing
 
-    it "negative zero" $ do
+    it "parses negative zero" $ do
       parseTillEnd P.number "-0" `shouldParse` P.Number P.Minus "0" Nothing Nothing
 
-    it "positive integer" $ do
+    it "parses positive integers" $ do
       parseTillEnd P.number "1" `shouldParse` P.Number P.Plus "1" Nothing Nothing
       parseTillEnd P.number "2" `shouldParse` P.Number P.Plus "2" Nothing Nothing
       parseTillEnd P.number "3" `shouldParse` P.Number P.Plus "3" Nothing Nothing
@@ -123,7 +116,7 @@ numberSpec =
       parseTillEnd P.number "9" `shouldParse` P.Number P.Plus "9" Nothing Nothing
       parseTillEnd P.number "123456789" `shouldParse` P.Number P.Plus "123456789" Nothing Nothing
 
-    it "negative integer" $ do
+    it "parses negative integers" $ do
       parseTillEnd P.number "-1" `shouldParse` P.Number P.Minus "1" Nothing Nothing
       parseTillEnd P.number "-2" `shouldParse` P.Number P.Minus "2" Nothing Nothing
       parseTillEnd P.number "-3" `shouldParse` P.Number P.Minus "3" Nothing Nothing
@@ -135,7 +128,7 @@ numberSpec =
       parseTillEnd P.number "-9" `shouldParse` P.Number P.Minus "9" Nothing Nothing
       parseTillEnd P.number "-123456789" `shouldParse` P.Number P.Minus "123456789" Nothing Nothing
 
-    it "fractional part" $ do
+    it "parses numbers with a fractional part" $ do
       parseTillEnd P.number "123.456" `shouldParse` P.Number P.Plus "123" (Just "456") Nothing
       parseTillEnd P.number "-123.456" `shouldParse` P.Number P.Minus "123" (Just "456") Nothing
       parseTillEnd P.number "0.5" `shouldParse` P.Number P.Plus "0" (Just "5") Nothing
@@ -144,7 +137,7 @@ numberSpec =
       parseTillEnd P.number "0.000" `shouldParse` P.Number P.Plus "0" (Just "000") Nothing
       parseTillEnd P.number "-0.000" `shouldParse` P.Number P.Minus "0" (Just "000") Nothing
 
-    it "exponent part" $ do
+    it "parses numbers with an exponent part" $ do
       parseTillEnd P.number "123.456E78" `shouldParse` P.Number P.Plus "123" (Just "456") (Just (P.Plus, "78"))
       parseTillEnd P.number "123.456E+78" `shouldParse` P.Number P.Plus "123" (Just "456") (Just (P.Plus, "78"))
       parseTillEnd P.number "123.456E-78" `shouldParse` P.Number P.Plus "123" (Just "456") (Just (P.Minus, "78"))
