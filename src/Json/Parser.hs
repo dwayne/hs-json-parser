@@ -1,7 +1,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 
 module Json.Parser
-    ( Parser, Error
+    ( Parser, Error, parse
     , Json(..), json
     , null, false, true, boolean
     , Number(Number), Sign(..), number
@@ -21,14 +21,34 @@ import Control.Monad (void)
 import Data.Text (Text)
 import Data.Void (Void)
 import Prelude hiding (null)
-import Text.Megaparsec (Parsec, ParseErrorBundle, between, choice, many, notFollowedBy, satisfy, sepBy, takeWhileP, takeWhile1P)
+import Text.Megaparsec
+  ( Parsec, ParseErrorBundle
+  , between, choice, eof, many, notFollowedBy, satisfy, sepBy, takeWhileP, takeWhile1P
+  )
 import Text.Megaparsec.Char (alphaNumChar, char)
+
+
+--
+-- TODO:
+--
+-- - [ ] Improve error messages
+-- - [ ] Test more failure scenarios
+-- - [ ] Think about the public API
+-- - [ ] Add documentation
+--
 
 
 type Parser = Parsec Void Text
 
 
 type Error = ParseErrorBundle Text Void
+
+
+parse :: Parser Json
+parse = zeroOrMoreWhitespaces *> json <* eof
+  where
+    zeroOrMoreWhitespaces :: Parser Text
+    zeroOrMoreWhitespaces = takeWhileP (Just "white space") isSpace
 
 
 -- Json
@@ -371,13 +391,14 @@ oneOrMoreWhitespaces =
   -- )
   --
   void $ takeWhile1P (Just "white space") isSpace
-  where
-    isSpace :: Char -> Bool
-    isSpace ch =
-         ch == '\x20'
-      || ch == '\x09'
-      || ch == '\x0A'
-      || ch == '\x0D'
+
+
+isSpace :: Char -> Bool
+isSpace ch =
+     ch == '\x20'
+  || ch == '\x09'
+  || ch == '\x0A'
+  || ch == '\x0D'
 
 
 -- Helpers
