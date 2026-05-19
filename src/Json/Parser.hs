@@ -1,8 +1,8 @@
 {-# LANGUAGE OverloadedStrings #-}
 
 module Json.Parser
-    ( Parser, Error, parse
-    , Json(..), json
+    ( Parser, Error, json
+    , Json(..), value
     , null, false, true, boolean
     , Number(Number), Sign(..), number
     , string
@@ -44,8 +44,8 @@ type Parser = Parsec Void Text
 type Error = ParseErrorBundle Text Void
 
 
-parse :: Parser Json
-parse = zeroOrMoreWhitespaces *> json <* eof
+json :: Parser Json
+json = zeroOrMoreWhitespaces *> value <* eof
   where
     zeroOrMoreWhitespaces :: Parser Text
     zeroOrMoreWhitespaces = takeWhileP (Just "white space") isSpace
@@ -64,8 +64,8 @@ data Json
   deriving (Eq, Show)
 
 
-json :: Parser Json
-json =
+value :: Parser Json
+value =
   choice
     [ JsonNull <$ null
     , JsonBoolean <$> boolean
@@ -340,7 +340,7 @@ array =
   --
   -- array = begin-array [ value *( value-separator value ) ] end-array
   --
-  between beginArray endArray (json `sepBy` valueSeparator)
+  between beginArray endArray (value `sepBy` valueSeparator)
 
 
 -- Objects
@@ -358,7 +358,7 @@ object =
   between beginObject endObject (member `sepBy` valueSeparator)
   where
     member :: Parser (Text, Json)
-    member = (,) <$> string <* nameSeparator <*> json
+    member = (,) <$> string <* nameSeparator <*> value
 
 
 -- Lexeme parsers

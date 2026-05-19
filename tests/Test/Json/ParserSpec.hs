@@ -2,9 +2,16 @@
 
 module Test.Json.ParserSpec (spec) where
 
+import qualified Data.ByteString as BS
+import qualified Data.Text.Encoding as TE
 import qualified Json.Parser as P
 
+import Data.List (isInfixOf, isPrefixOf, isSuffixOf, sortOn)
 import Data.Text (Text)
+import Data.Text.Encoding.Error (UnicodeException)
+import System.Directory (listDirectory)
+import System.Environment (lookupEnv)
+import System.FilePath ((</>))
 import Test.Hspec
 import Test.Hspec.Megaparsec
 import Text.Megaparsec (parse, eof)
@@ -22,7 +29,8 @@ spec =
     stringSpec
     arraySpec
     objectSpec
-    jsonSpec
+    valueSpec
+    nstJsonTestSuiteSpec
 
 
 oneOrMoreWhitespacesSpec :: Spec
@@ -270,25 +278,120 @@ objectSpec =
       parseTillEnd P.object "{} " `shouldParse` []
 
 
-jsonSpec :: Spec
-jsonSpec =
-  describe "json" $ do
-    it "parses JSON" $ do
-      parseTillEnd P.json "null" `shouldParse` P.JsonNull
-      parseTillEnd P.json "false" `shouldParse` P.JsonBoolean False
-      parseTillEnd P.json "true" `shouldParse` P.JsonBoolean True
-      parseTillEnd P.json "123" `shouldParse` P.JsonNumber (P.Number P.Plus "123" Nothing Nothing)
-      parseTillEnd P.json "\"Hello\"" `shouldParse` P.JsonString "Hello"
-      parseTillEnd P.json "[[], null]" `shouldParse` P.JsonArray [ P.JsonArray [], P.JsonNull ]
-      parseTillEnd P.json "{ \"a\": null }" `shouldParse` P.JsonObject [( "a", P.JsonNull )]
+valueSpec :: Spec
+valueSpec =
+  describe "value" $ do
+    it "parses a JSON value" $ do
+      parseTillEnd P.value "null" `shouldParse` P.JsonNull
+      parseTillEnd P.value "false" `shouldParse` P.JsonBoolean False
+      parseTillEnd P.value "true" `shouldParse` P.JsonBoolean True
+      parseTillEnd P.value "123" `shouldParse` P.JsonNumber (P.Number P.Plus "123" Nothing Nothing)
+      parseTillEnd P.value "\"Hello\"" `shouldParse` P.JsonString "Hello"
+      parseTillEnd P.value "[[], null]" `shouldParse` P.JsonArray [ P.JsonArray [], P.JsonNull ]
+      parseTillEnd P.value "{ \"a\": null }" `shouldParse` P.JsonObject [( "a", P.JsonNull )]
 
     it "consumes trailing spaces" $ do
-      parseTillEnd P.json "null " `shouldParse` P.JsonNull
-
-
--- Helpers
+      parseTillEnd P.value "null " `shouldParse` P.JsonNull
 
 
 parseTillEnd :: P.Parser a -> Text -> Either P.Error a
-parseTillEnd p =
-  parse (p <* eof) ""
+parseTillEnd p = parse (p <* eof) ""
+
+
+--
+-- nst/JSONTestSuite
+--
+-- https://github.com/nst/JSONTestSuite
+--
+
+
+nstJsonTestSuiteSpec :: Spec
+nstJsonTestSuiteSpec = do
+  maybeDir <- runIO $ lookupEnv "JSON_TEST_SUITE"
+  case maybeDir of
+    Just dir ->
+      buildNstJsonTestSuiteSpec dir
+
+    Nothing ->
+      it "skips nst/JSONTestSuite" $ do
+        pendingWith "set JSON_TEST_SUITE to run nst/JSONTestSuite"
+
+
+buildNstJsonTestSuiteSpec :: FilePath -> Spec
+buildNstJsonTestSuiteSpec dir = do
+  files <- runIO $ sortOn id . filter (".json" `isSuffixOf`) <$> listDirectory dir
+  describe "nst/JSONTestSuite" $
+    mapM_ (oneTestCase dir) files
+
+
+oneTestCase :: FilePath -> FilePath -> Spec
+oneTestCase dir name = do
+  result <- runIO $ getFileContents (dir </> name)
+  case name of
+    'y' : '_' : _ -> yTestCase name result
+    'n' : '_' : _ -> nTestCase name result
+    'i' : '_' : _ -> iTestCase name result
+    _ -> it name $ expectationFailure $ "unexpected filename: " ++ name
+
+
+yTestCase :: FilePath -> Either UnicodeException Text -> Spec
+yTestCase name (Right content) = it ("parses " ++ name) $ parseJson `shouldSucceedOn` content
+yTestCase name (Left e) = it name $ unexpectedUtf8DecodeError e
+
+
+nTestCase :: FilePath -> Either UnicodeException Text -> Spec
+nTestCase name (Right content) = it ("does not parse " ++ name) $ parseJson `shouldFailOn` content
+nTestCase name (Left e) =
+  let
+    containsOneOf :: FilePath -> [String] -> Bool
+    containsOneOf s = any (`isInfixOf` s)
+
+    invalidUtf8Substrings :: [String]
+    invalidUtf8Substrings =
+      [ "invalid-utf8"
+      , "invalid_utf8"
+      , "invalid-utf-8"
+      , "incomplete_UTF8"
+      , "lone_continuation_byte"
+      , "single_eacute"
+      ]
+  in
+  if name `containsOneOf` invalidUtf8Substrings then
+    it ("expects UTF-8 decode error for " ++ name) pass
+
+  else
+    it name $ unexpectedUtf8DecodeError e
+
+
+iTestCase :: FilePath -> Either UnicodeException Text -> Spec
+iTestCase name (Right content) =
+  if "i_structure_UTF-8_BOM_empty_object" `isPrefixOf` name then
+    it ("does not parse " ++ name) $
+      parseJson `shouldFailOn` content
+
+  else
+    it ("parses " ++ name) $
+      parseJson `shouldSucceedOn` content
+
+iTestCase name (Left e) =
+  if "i_string" `isPrefixOf` name then
+    it ("expects UTF-8 decode error for " ++ name) pass
+
+  else
+    it name $ unexpectedUtf8DecodeError e
+
+
+pass :: Expectation
+pass = return ()
+
+
+unexpectedUtf8DecodeError :: UnicodeException -> Expectation
+unexpectedUtf8DecodeError e = expectationFailure ("unexpected UTF-8 decode error " ++ show e)
+
+
+parseJson :: Text -> Either P.Error P.Json
+parseJson = parse P.json ""
+
+
+getFileContents :: FilePath -> IO (Either UnicodeException Text)
+getFileContents f = TE.decodeUtf8' <$> BS.readFile f

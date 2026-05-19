@@ -31,6 +31,9 @@ test-suite tests
 
   build-depends:
     base,
+    bytestring,
+    directory,
+    filepath,
     hspec,
     hspec-megaparsec,
     json-parser,
