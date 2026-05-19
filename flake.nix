@@ -1,5 +1,12 @@
 {
-  outputs = { self, nixpkgs, flake-utils }:
+  inputs = {
+    json-test-suite = {
+      url = "github:nst/JSONTestSuite";
+      flake = false;
+    };
+  };
+
+  outputs = { self, nixpkgs, flake-utils, json-test-suite }:
     flake-utils.lib.eachDefaultSystem (system:
       let
         pkgs = nixpkgs.legacyPackages.${system};
@@ -13,6 +20,8 @@
             pkgs.haskell.compiler.ghc9103
             pkgs.hlint
           ];
+
+          JSON_TEST_SUITE = "${json-test-suite}/test_parsing";
 
           shellHook = ''
             export PROJECT_ROOT="$PWD"

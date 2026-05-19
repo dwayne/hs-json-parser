@@ -17,6 +17,22 @@
         "type": "indirect"
       }
     },
+    "json-test-suite": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1732280141,
+        "narHash": "sha256-s2yMgVWq2DwibAjOvLKhGDbEwXm4yke/g4mp7u565H4=",
+        "owner": "nst",
+        "repo": "JSONTestSuite",
+        "rev": "1ef36fa01286573e846ac449e8683f8833c5b26a",
+        "type": "github"
+      },
+      "original": {
+        "owner": "nst",
+        "repo": "JSONTestSuite",
+        "type": "github"
+      }
+    },
     "nixpkgs": {
       "locked": {
         "lastModified": 1777641297,
@@ -34,6 +50,7 @@
     "root": {
       "inputs": {
         "flake-utils": "flake-utils",
+        "json-test-suite": "json-test-suite",
         "nixpkgs": "nixpkgs"
       }
     },
