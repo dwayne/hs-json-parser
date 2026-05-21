@@ -29,16 +29,6 @@ import Text.Megaparsec
 import Text.Megaparsec.Char (alphaNumChar, char)
 
 
---
--- TODO:
---
--- - [ ] Improve error messages
--- - [ ] Test more failure scenarios
--- - [ ] Think about the public API
--- - [ ] Add documentation
---
-
-
 type Parser = Parsec Void Text
 
 
