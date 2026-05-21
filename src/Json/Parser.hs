@@ -22,7 +22,8 @@ import Data.Text (Text)
 import Data.Void (Void)
 import Prelude hiding (null)
 import Text.Megaparsec
-  ( Parsec, ParseErrorBundle
+  ( (<?>)
+  , Parsec, ParseErrorBundle
   , between, choice, eof, many, notFollowedBy, satisfy, sepBy, takeWhileP, takeWhile1P
   )
 import Text.Megaparsec.Char (alphaNumChar, char)
@@ -48,7 +49,7 @@ json :: Parser Json
 json = zeroOrMoreWhitespaces *> value <* eof
   where
     zeroOrMoreWhitespaces :: Parser Text
-    zeroOrMoreWhitespaces = takeWhileP (Just "white space") isSpace
+    zeroOrMoreWhitespaces = takeWhileP Nothing isSpace
 
 
 -- Json
@@ -80,15 +81,15 @@ value =
 
 
 null :: Parser Text
-null = keyword "null"
+null = keyword "null" <?> "null"
 
 
 false :: Parser Bool
-false = False <$ keyword "false"
+false = False <$ keyword "false" <?> "false"
 
 
 true :: Parser Bool
-true = True <$ keyword "true"
+true = True <$ keyword "true" <?> "true"
 
 
 boolean :: Parser Bool
@@ -132,7 +133,7 @@ number =
   -- e    = %x65 / %x45   ; e E
   -- plus = %x2B          ; +
   --
-  lexeme (Number <$> leadingSign <*> naturalNumber <*> optional fractionalPart <*> optional exponentPart)
+  lexeme (Number <$> leadingSign <*> naturalNumber <*> optional fractionalPart <*> optional exponentPart) <?> "a number"
   where
     leadingSign :: Parser Sign
     leadingSign = minus <|> pure Plus
@@ -203,13 +204,19 @@ string =
   --
   -- unescaped = %x20-21 / %x23-5B / %x5D-10FFFF
   --
-  lexeme (between quotationMark quotationMark characters)
+  lexeme (between beginString endString characters) <?> "a string"
   where
+    beginString :: Parser Char
+    beginString = quotationMark <?> "an opening quotation mark"
+
+    endString :: Parser Char
+    endString = quotationMark <?> "a closing quotation mark"
+
     characters :: Parser Text
     characters = T.pack <$> many character
 
     character :: Parser Char
-    character = unescaped <|> escaped
+    character = unescaped <|> escaped <?> "a character"
 
     unescaped :: Parser Char
     unescaped = satisfy isUnescaped
@@ -235,7 +242,7 @@ string =
       , carriageReturn
       , tab
       , unicodeEscape
-      ]
+      ] <?> "an escape code"
 
     quotationMark :: Parser Char
     quotationMark = char quotationMarkChar
@@ -293,7 +300,7 @@ string =
       Char.chr n
 
     hexDigit :: Parser Char
-    hexDigit = satisfy Char.isHexDigit
+    hexDigit = satisfy Char.isHexDigit <?> "a hexadecimal digit"
 
 
 -- Structural characters
@@ -340,7 +347,7 @@ array =
   --
   -- array = begin-array [ value *( value-separator value ) ] end-array
   --
-  between beginArray endArray (value `sepBy` valueSeparator)
+  between beginArray endArray (value `sepBy` valueSeparator) <?> "an array"
 
 
 -- Objects
@@ -355,7 +362,7 @@ object =
   -- object = begin-object [ member *( value-separator member ) ] end-object
   -- member = string name-separator value
   --
-  between beginObject endObject (member `sepBy` valueSeparator)
+  between beginObject endObject (member `sepBy` valueSeparator) <?> "an object"
   where
     member :: Parser (Text, Json)
     member = (,) <$> string <* nameSeparator <*> value

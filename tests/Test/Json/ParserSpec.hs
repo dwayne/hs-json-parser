@@ -31,6 +31,7 @@ spec =
     objectSpec
     valueSpec
     nstJsonTestSuiteSpec
+    errorMessagesSpec
 
 
 oneOrMoreWhitespacesSpec :: Spec
@@ -292,6 +293,132 @@ valueSpec =
 
     it "consumes trailing spaces" $ do
       parseTillEnd P.value "null " `shouldParse` P.JsonNull
+
+
+errorMessagesSpec :: Spec
+errorMessagesSpec =
+  --
+  -- Test that appropriate helpful error messages are used upon failure
+  --
+  let
+    eJsonLabels :: ET Text
+    eJsonLabels =
+      elabel "null"
+      <> elabel "false"
+      <> elabel "true"
+      <> elabel "a number"
+      <> elabel "a string"
+      <> elabel "an array"
+      <> elabel "an object"
+  in
+  describe "error messages" $ do
+    it "when failing at the top level" $ do
+      parseJson "" `shouldFailWith` err 0 (ueof <> eJsonLabels)
+
+      parseJson "nulL" `shouldFailWith` err 0 (utoks "nulL" <> eJsonLabels)
+      parseJson " nulL" `shouldFailWith` err 1 (utoks "nulL" <> eJsonLabels)
+
+      parseJson "faLse" `shouldFailWith` err 0 (utoks "faLse" <> eJsonLabels)
+      parseJson "True" `shouldFailWith` err 0 (utoks "True" <> eJsonLabels)
+      parseJson "+1." `shouldFailWith` err 0 (utoks "+1." <> eJsonLabels)
+
+    it "when failing in a string" $ do
+      parseJson "\"a" `shouldFailWith` err 2
+        ( ueof
+        <> elabel "a character" <> elabel "a closing quotation mark"
+        )
+
+      parseJson "\"a\\\"" `shouldFailWith` err 4
+        ( ueof
+        <> elabel "a character" <> elabel "a closing quotation mark"
+        )
+
+      parseJson "\"a\\x\"" `shouldFailWith` err 3
+        ( utok 'x'
+        <> elabel "an escape code"
+        )
+
+      parseJson "\"a\\u\"" `shouldFailWith` err 4
+        ( utok '"'
+        <> elabel "a hexadecimal digit"
+        )
+
+      parseJson "\"a\\u0\"" `shouldFailWith` err 5
+        ( utok '"'
+        <> elabel "a hexadecimal digit"
+        )
+
+      parseJson "\"a\\u00\"" `shouldFailWith` err 6
+        ( utok '"'
+        <> elabel "a hexadecimal digit"
+        )
+
+      parseJson "\"a\\u002\"" `shouldFailWith` err 7
+        ( utok '"'
+        <> elabel "a hexadecimal digit"
+        )
+
+      parseJson "\"a\\u002G\"" `shouldFailWith` err 7
+        ( utok 'G'
+        <> elabel "a hexadecimal digit"
+        )
+
+    it "when failing in an array" $ do
+      parseJson "[" `shouldFailWith` err 1
+        ( ueof
+        <> etok ']' <> eJsonLabels
+        )
+
+      parseJson "[," `shouldFailWith` err 1
+        ( utok ','
+        <> etok ']' <> eJsonLabels
+        )
+
+      parseJson "[,]" `shouldFailWith` err 1
+        ( utok ','
+        <> etok ']' <> eJsonLabels
+        )
+
+      parseJson "[1,]" `shouldFailWith` err 3
+        ( utok ']'
+        <> eJsonLabels
+        )
+
+    it "when failing in an object" $ do
+      parseJson "{" `shouldFailWith` err 1
+        ( ueof
+        <> etok '}' <> elabel "a string"
+        )
+
+      parseJson "{123" `shouldFailWith` err 1
+        ( utok '1'
+        <> etok '}' <> elabel "a string"
+        )
+
+      parseJson "{\"a\\x\":}" `shouldFailWith` err 4
+        ( utok 'x'
+        <> elabel "an escape code"
+        )
+
+      parseJson "{\"123\"" `shouldFailWith` err 6
+        ( ueof
+        <> etok ':'
+        )
+
+      parseJson "{\"123\":" `shouldFailWith` err 7
+        ( ueof
+        <> eJsonLabels
+        )
+
+      parseJson "{\"123\":}" `shouldFailWith` err 7
+        ( utok '}'
+        <> eJsonLabels
+        )
+
+      parseJson "{\"123\":123,}" `shouldFailWith` err 11
+        ( utok '}'
+        <> elabel "a string"
+        )
 
 
 parseTillEnd :: P.Parser a -> Text -> Either P.Error a
