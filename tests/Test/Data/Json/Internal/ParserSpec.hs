@@ -1,10 +1,10 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-module Test.Json.ParserSpec (spec) where
+module Test.Data.Json.Internal.ParserSpec (spec) where
 
 import qualified Data.ByteString as BS
 import qualified Data.Text.Encoding as TE
-import qualified Json.Parser as P
+import qualified Data.Json.Internal.Parser as P
 
 import Data.List (isInfixOf, isPrefixOf, isSuffixOf, sortOn)
 import Data.Text (Text)
@@ -19,7 +19,7 @@ import Text.Megaparsec (parse, eof)
 
 spec :: Spec
 spec =
-  describe "Parser" $ do
+  describe "Data.Json.Internal.Parser" $ do
     oneOrMoreWhitespacesSpec
     nullSpec
     falseSpec

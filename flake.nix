@@ -29,7 +29,7 @@
 
             alias b='cabal build'
             alias t='cabal test'
-            alias l='hlint src tests'
+            alias l='hlint lib src tests'
           '';
         };
       }

@@ -1,6 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-module Json.Parser
+module Data.Json.Internal.Parser
     ( Parser, Error, json
     , Json(..), value
     , null, false, true, boolean
