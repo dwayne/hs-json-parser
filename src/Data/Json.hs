@@ -1,13 +1,32 @@
 {-# LANGUAGE OverloadedStrings #-}
 
+{- | TODO
+-}
 module Data.Json
-  ( Json(..)
-  , Number(numSign, numDigits, numFraction, numExponent), Sign(..)
-  , numFromInt, numFromInteger, numToText, numToRational
+  ( -- * JSON
+    Json(..)
+
+    -- * Number
+  , Number, Sign(..)
+
+    -- ** Construct
+  , numFromInt, numFromInteger
+
+    -- ** Query
+  , numSign, numDigits, numFraction, numExponent
+
+    -- ** Convert
+  , numToText, numToRational
+
+    -- * Array
   , Array
+
+    -- * Object
   , Object
-  , SyntaxError
+
+    -- * Parser
   , parse
+  , SyntaxError
   ) where
 
 import qualified Data.Json.Internal.Parser as P
@@ -23,6 +42,7 @@ import Prelude hiding (fromIntegral)
 import Text.Megaparsec (ParseErrorBundle)
 
 
+-- | A JSON value.
 data Json
   = JsonNull
   | JsonBoolean Bool
@@ -33,69 +53,32 @@ data Json
   deriving (Eq, Show)
 
 
+-- | A JSON number.
 data Number
   = Number
-      { numSign :: Sign
-      , numDigits :: Text
-      , numFraction :: Maybe Text
-      , numExponent :: Maybe (Sign, Text)
+      { numSign :: Sign -- ^ Get the sign of the number.
+      , numDigits :: Text -- ^ Get the digits before the decimal point.
+      , numFraction :: Maybe Text -- ^ Get the digits after the decimal point, if any.
+      , numExponent :: Maybe (Sign, Text) -- ^ Get the exponent, if any.
       }
   deriving (Eq, Show)
 
 
-data Sign
-  = Plus
-  | Minus
-  deriving (Eq, Show)
-
-
-type Array = [Json]
-
-
-type Object = [(Text, Json)]
-
-
-type SyntaxError = ParseErrorBundle Text Void
-
-
-parse :: Text -> Either SyntaxError Json
-parse = fmap convertJson . Megaparsec.parse P.json ""
-
-
-convertJson :: P.Json -> Json
-convertJson P.JsonNull        = JsonNull
-convertJson (P.JsonBoolean b) = JsonBoolean b
-convertJson (P.JsonNumber n)  = JsonNumber $ convertNumber n
-convertJson (P.JsonString t)  = JsonString t
-convertJson (P.JsonArray a)   = JsonArray $ map convertJson a
-convertJson (P.JsonObject o)  = JsonObject $ map (second convertJson) o
-
-
-convertNumber :: P.Number -> Number
-convertNumber (P.Number s d f e) =
-  Number (convertSign s) d f (fmap (first convertSign) e)
-
-
-convertSign :: P.Sign -> Sign
-convertSign P.Plus  = Plus
-convertSign P.Minus = Minus
-
-
--- Number
-
-
+-- | TODO
 numFromInt :: Int -> Number
 numFromInt n
   | n < 0     = Number Minus (T.show $ -n) Nothing Nothing
   | otherwise = Number Plus (T.show n) Nothing Nothing
 
 
+-- | TODO
 numFromInteger :: Integer -> Number
 numFromInteger n
   | n < 0     = Number Minus (T.show $ -n) Nothing Nothing
   | otherwise = Number Plus (T.show n) Nothing Nothing
 
 
+-- | TODO
 numToText :: Number -> Text
 numToText (Number s d mf me) =
   signToText s <> d <> fractionToText mf <> exponentToText me
@@ -114,6 +97,7 @@ numToText (Number s d mf me) =
     exponentToText (Just (Minus, e)) = "e-" <> e
 
 
+-- | TODO
 numToRational :: Number -> Rational
 numToRational (Number s d mf me) =
   if n < 0 then
@@ -144,3 +128,46 @@ numToRational (Number s d mf me) =
 
     textToInteger :: Text -> Integer
     textToInteger = either (const 0) fst . TR.decimal
+
+
+-- | A sign.
+data Sign
+  = Plus
+  | Minus
+  deriving (Eq, Show)
+
+
+-- | TODO
+type Array = [Json]
+
+
+-- | TODO
+type Object = [(Text, Json)]
+
+
+-- | TODO
+type SyntaxError = ParseErrorBundle Text Void
+
+
+-- | TODO
+parse :: Text -> Either SyntaxError Json
+parse = fmap convertJson . Megaparsec.parse P.json ""
+
+
+convertJson :: P.Json -> Json
+convertJson P.JsonNull        = JsonNull
+convertJson (P.JsonBoolean b) = JsonBoolean b
+convertJson (P.JsonNumber n)  = JsonNumber $ convertNumber n
+convertJson (P.JsonString t)  = JsonString t
+convertJson (P.JsonArray a)   = JsonArray $ map convertJson a
+convertJson (P.JsonObject o)  = JsonObject $ map (second convertJson) o
+
+
+convertNumber :: P.Number -> Number
+convertNumber (P.Number s d f e) =
+  Number (convertSign s) d f (fmap (first convertSign) e)
+
+
+convertSign :: P.Sign -> Sign
+convertSign P.Plus  = Plus
+convertSign P.Minus = Minus
