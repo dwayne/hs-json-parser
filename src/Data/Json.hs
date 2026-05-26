@@ -1,7 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-{- | TODO
--}
+-- | A JSON parser compliant with <https://www.rfc-editor.org/info/rfc8259/ RFC 8259>.
 module Data.Json
   ( -- * JSON
     Json(..)
@@ -26,7 +25,9 @@ module Data.Json
 
     -- * Parser
   , parse, parseFromFile
-  , Error, SyntaxError
+
+    -- * Errors
+  , Error(..), SyntaxError
   ) where
 
 import qualified Data.ByteString as BS
@@ -45,7 +46,7 @@ import Prelude hiding (fromIntegral)
 import Text.Megaparsec (ParseErrorBundle)
 
 
--- | A JSON value.
+-- | A JSON <https://www.rfc-editor.org/info/rfc8259/#section-3 value>.
 data Json
   = JsonNull
   | JsonBoolean Bool
@@ -56,32 +57,39 @@ data Json
   deriving (Eq, Show)
 
 
--- | A JSON number.
+-- | A JSON <https://www.rfc-editor.org/info/rfc8259/#section-6 number>.
 data Number
   = Number
-      { numSign :: Sign -- ^ Get the sign of the number.
-      , numDigits :: Text -- ^ Get the digits before the decimal point.
-      , numFraction :: Maybe Text -- ^ Get the digits after the decimal point, if any.
-      , numExponent :: Maybe (Sign, Text) -- ^ Get the exponent, if any.
+      { numSign :: Sign                   -- ^ The sign.
+      , numDigits :: Text                 -- ^ The integer part.
+      , numFraction :: Maybe Text         -- ^ The fractional part, if any.
+      , numExponent :: Maybe (Sign, Text) -- ^ The exponent, if any.
       }
   deriving (Eq, Show)
 
 
--- | TODO
+-- | The sign of a 'Number' or its exponent: positive ('Plus') or negative ('Minus').
+data Sign
+  = Plus
+  | Minus
+  deriving (Eq, Show)
+
+
+-- | Construct a 'Number' from an 'Int'.
 numFromInt :: Int -> Number
 numFromInt n
   | n < 0     = Number Minus (T.show $ -n) Nothing Nothing
   | otherwise = Number Plus (T.show n) Nothing Nothing
 
 
--- | TODO
+-- | Construct a 'Number' from an 'Integer'.
 numFromInteger :: Integer -> Number
 numFromInteger n
   | n < 0     = Number Minus (T.show $ -n) Nothing Nothing
   | otherwise = Number Plus (T.show n) Nothing Nothing
 
 
--- | TODO
+-- | Convert a 'Number' to 'Text'.
 numToText :: Number -> Text
 numToText (Number s d mf me) =
   signToText s <> d <> fractionToText mf <> exponentToText me
@@ -100,7 +108,7 @@ numToText (Number s d mf me) =
     exponentToText (Just (Minus, e)) = "e-" <> e
 
 
--- | TODO
+-- | Convert a 'Number' to a 'Rational'.
 numToRational :: Number -> Rational
 numToRational (Number s d mf me) =
   if n < 0 then
@@ -133,33 +141,29 @@ numToRational (Number s d mf me) =
     textToInteger = either (const 0) fst . TR.decimal
 
 
--- | A sign.
-data Sign
-  = Plus
-  | Minus
-  deriving (Eq, Show)
-
-
--- | TODO
+-- | A JSON <https://www.rfc-editor.org/info/rfc8259/#section-5 array>.
 type Array = [Json]
 
 
--- | TODO
+-- | A JSON <https://www.rfc-editor.org/info/rfc8259/#section-4 object>.
+--
+-- Represented as a list of name/value pairs, preserving insertion order
+-- and allowing duplicate keys, as permitted by the RFC.
 type Object = [(Text, Json)]
 
 
--- | TODO
+-- | An error that can occur during 'parseFromFile'.
 data Error
-  = EncodingError UnicodeException
-  | SyntaxError SyntaxError
+  = EncodingError UnicodeException -- ^ The input was not valid UTF-8.
+  | SyntaxError SyntaxError        -- ^ The input was not valid JSON.
   deriving (Eq, Show)
 
 
--- | TODO
+-- | An error that can occur during 'parse' indicating the input was not valid JSON.
 type SyntaxError = ParseErrorBundle Text Void
 
 
--- | TODO
+-- | Parse a JSON value from a file.
 parseFromFile :: FilePath -> IO (Either Error Json)
 parseFromFile f = do
   bs <- BS.readFile f
@@ -171,7 +175,7 @@ parseFromFile f = do
       return $ Left (EncodingError err)
 
 
--- | TODO
+-- | Parse a JSON value from 'Text'.
 parse :: Text -> Either SyntaxError Json
 parse = fmap convertJson . Megaparsec.parse P.json ""
 
