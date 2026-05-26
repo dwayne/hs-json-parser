@@ -14,6 +14,7 @@ library
 
   build-depends:
     base,
+    bytestring,
     internal,
     megaparsec,
     text

@@ -25,18 +25,21 @@ module Data.Json
   , Object
 
     -- * Parser
-  , parse
-  , SyntaxError
+  , parse, parseFromFile
+  , Error, SyntaxError
   ) where
 
+import qualified Data.ByteString as BS
 import qualified Data.Json.Internal.Parser as P
 import qualified Data.Text as T
+import qualified Data.Text.Encoding as TE
 import qualified Data.Text.Read as TR
 import qualified Text.Megaparsec as Megaparsec
 
 import Data.Bifunctor (first, second)
 import Data.Ratio ((%))
 import Data.Text (Text)
+import Data.Text.Encoding.Error (UnicodeException)
 import Data.Void (Void)
 import Prelude hiding (fromIntegral)
 import Text.Megaparsec (ParseErrorBundle)
@@ -146,7 +149,26 @@ type Object = [(Text, Json)]
 
 
 -- | TODO
+data Error
+  = EncodingError UnicodeException
+  | SyntaxError SyntaxError
+  deriving (Eq, Show)
+
+
+-- | TODO
 type SyntaxError = ParseErrorBundle Text Void
+
+
+-- | TODO
+parseFromFile :: FilePath -> IO (Either Error Json)
+parseFromFile f = do
+  bs <- BS.readFile f
+  case TE.decodeUtf8' bs of
+    Right content ->
+      return $ first SyntaxError (parse content)
+
+    Left err ->
+      return $ Left (EncodingError err)
 
 
 -- | TODO
