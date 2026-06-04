@@ -30,6 +30,9 @@
             alias b='cabal build'
             alias t='cabal test'
             alias l='hlint lib src tests'
+
+            alias d='cabal haddock'
+            alias do='cabal haddock --open'
           '';
         };
       }
