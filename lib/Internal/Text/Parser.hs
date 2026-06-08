@@ -1,10 +1,10 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-module Data.Json.Internal.Parser
-    ( Parser, Error, json
-    , Json(..), value
+module Internal.Text.Parser
+    ( Parser, Error
+    , json, value
     , null, false, true, boolean
-    , Number(Number), Sign(..), number
+    , number
     , string
     , array
     , object
@@ -20,6 +20,7 @@ import Control.Applicative ((<|>), empty)
 import Control.Monad (void)
 import Data.Text (Text)
 import Data.Void (Void)
+import Internal.Data.Json
 import Prelude hiding (null)
 import Text.Megaparsec
   ( (<?>)
@@ -35,24 +36,16 @@ type Parser = Parsec Void Text
 type Error = ParseErrorBundle Text Void
 
 
+
+-- Json
+
+
+
 json :: Parser Json
 json = zeroOrMoreWhitespaces *> value <* eof
   where
     zeroOrMoreWhitespaces :: Parser Text
     zeroOrMoreWhitespaces = takeWhileP Nothing isSpace
-
-
--- Json
-
-
-data Json
-  = JsonNull
-  | JsonBoolean Bool
-  | JsonNumber Number
-  | JsonString Text
-  | JsonArray Array
-  | JsonObject Object
-  deriving (Eq, Show)
 
 
 value :: Parser Json
@@ -67,7 +60,9 @@ value =
     ]
 
 
+
 -- Literals
+
 
 
 null :: Parser Text
@@ -86,23 +81,9 @@ boolean :: Parser Bool
 boolean = false <|> true
 
 
+
 -- Numbers
 
-
-data Number
-  = Number
-      { numSign :: Sign
-      , numDigits :: Text
-      , numFraction :: Maybe Text
-      , numExponent :: Maybe (Sign, Text)
-      }
-  deriving (Eq, Show)
-
-
-data Sign
-  = Plus
-  | Minus
-  deriving (Eq, Show)
 
 
 number :: Parser Number
@@ -168,7 +149,9 @@ number =
     oneOrMoreDigits = takeWhile1P (Just "digit") Char.isDigit
 
 
+
 -- Strings
+
 
 
 string :: Parser Text
@@ -293,7 +276,9 @@ string =
     hexDigit = satisfy Char.isHexDigit <?> "a hexadecimal digit"
 
 
+
 -- Structural characters
+
 
 
 beginArray :: Parser Text
@@ -326,10 +311,9 @@ nameSeparator =
   symbol ":" -- colon
 
 
+
 -- Arrays
 
-
-type Array = [Json]
 
 
 array :: Parser Array
@@ -340,10 +324,9 @@ array =
   between beginArray endArray (value `sepBy` valueSeparator) <?> "an array"
 
 
+
 -- Objects
 
-
-type Object = [(Text, Json)]
 
 
 object :: Parser Object
@@ -358,7 +341,9 @@ object =
     member = (,) <$> string <* nameSeparator <*> value
 
 
+
 -- Lexeme parsers
+
 
 
 keyword :: Text -> Parser Text
@@ -398,7 +383,9 @@ isSpace ch =
   || ch == '\x0D'
 
 
+
 -- Helpers
+
 
 
 optional :: Parser a -> Parser (Maybe a)

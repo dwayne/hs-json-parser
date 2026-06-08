@@ -31,10 +31,11 @@ module Data.Json
   ) where
 
 import qualified Data.ByteString as BS
-import qualified Data.Json.Internal.Parser as P
 import qualified Data.Text as T
 import qualified Data.Text.Encoding as TE
 import qualified Data.Text.Read as TR
+import qualified Internal.Data.Json as J
+import qualified Internal.Text.Parser as P
 import qualified Text.Megaparsec as Megaparsec
 
 import Data.Bifunctor (first, second)
@@ -180,20 +181,20 @@ parse :: Text -> Either SyntaxError Json
 parse = fmap convertJson . Megaparsec.parse P.json ""
 
 
-convertJson :: P.Json -> Json
-convertJson P.JsonNull        = JsonNull
-convertJson (P.JsonBoolean b) = JsonBoolean b
-convertJson (P.JsonNumber n)  = JsonNumber $ convertNumber n
-convertJson (P.JsonString t)  = JsonString t
-convertJson (P.JsonArray a)   = JsonArray $ map convertJson a
-convertJson (P.JsonObject o)  = JsonObject $ map (second convertJson) o
+convertJson :: J.Json -> Json
+convertJson J.JsonNull        = JsonNull
+convertJson (J.JsonBoolean b) = JsonBoolean b
+convertJson (J.JsonNumber n)  = JsonNumber $ convertNumber n
+convertJson (J.JsonString t)  = JsonString t
+convertJson (J.JsonArray a)   = JsonArray $ map convertJson a
+convertJson (J.JsonObject o)  = JsonObject $ map (second convertJson) o
 
 
-convertNumber :: P.Number -> Number
-convertNumber (P.Number s d f e) =
+convertNumber :: J.Number -> Number
+convertNumber (J.Number s d f e) =
   Number (convertSign s) d f (fmap (first convertSign) e)
 
 
-convertSign :: P.Sign -> Sign
-convertSign P.Plus  = Plus
-convertSign P.Minus = Minus
+convertSign :: J.Sign -> Sign
+convertSign J.Plus  = Plus
+convertSign J.Minus = Minus

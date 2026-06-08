@@ -26,7 +26,8 @@ library internal
   ghc-options: -Wall
 
   exposed-modules:
-    Data.Json.Internal.Parser
+    Internal.Data.Json
+    Internal.Text.Parser
 
   build-depends:
     base ^>=4.20,
@@ -43,7 +44,7 @@ test-suite tests
   ghc-options: -Wall
 
   other-modules:
-    Test.Data.Json.Internal.ParserSpec
+    Test.Internal.Text.ParserSpec
 
   build-depends:
     base ^>=4.20,
