@@ -1,0 +1,131 @@
+{-# LANGUAGE OverloadedStrings #-}
+
+module Internal.Text.Printer (pretty) where
+
+import qualified Data.Text.Lazy as T
+import qualified Data.Text.Lazy.Builder as TB
+
+import Data.Char (ord)
+import Data.Text.Lazy (Text)
+import Data.Text.Lazy.Builder (Builder)
+import Internal.Data.Json
+import Numeric (showHex)
+
+
+pretty :: Int -> Json -> Text
+pretty numSpaces = TB.toLazyText . prettyHelper state
+  where
+    state :: State
+    state = State 0 spaces newline nameSeparator
+
+    n :: Int
+    n = max 0 numSpaces
+
+    spaces :: Builder
+    spaces = mconcat $ replicate n " "
+
+    newline :: Builder
+    nameSeparator :: Builder
+    ( newline, nameSeparator ) =
+      if n == 0 then
+        ( "", ":" )
+
+      else
+        ( "\n", ": " )
+
+
+data State
+  = State
+    { sLevel :: Int
+    , sSpaces :: Builder
+    , sNewline :: Builder
+    , sNameSeparator :: Builder
+    }
+
+
+prettyHelper :: State -> Json -> Builder
+prettyHelper state json =
+  case json of
+    Null ->
+      "null"
+
+    Boolean b ->
+      if b then "true" else "false"
+
+    Number number ->
+      prettyNumber number
+
+    String s ->
+      prettyString $ T.fromStrict s
+
+    Array _ ->
+      undefined
+
+    Object _ ->
+      undefined
+
+
+prettyNumber :: Number -> Builder
+prettyNumber (Num s d mf me) =
+  fromSign s <> TB.fromText d <> dotDigits <> eExponent
+  where
+    fromSign :: Sign -> Builder
+    fromSign Plus  = ""
+    fromSign Minus = "-"
+
+    dotDigits :: Builder
+    dotDigits =
+      case mf of
+        Nothing ->
+          ""
+
+        Just t ->
+          "." <> TB.fromText t
+
+    eExponent :: Builder
+    eExponent =
+      case me of
+        Nothing ->
+          ""
+
+        Just (es, et) ->
+          "e" <> fromSign es <> TB.fromText et
+
+
+prettyString :: Text -> Builder
+prettyString s =
+  TB.singleton '"' <> quote s <> TB.singleton '"'
+  where
+    quote :: Text -> Builder
+    quote s =
+      let
+        (h, t) = T.break onEscapable s
+      in
+      case T.uncons t of
+        Nothing ->
+          TB.fromLazyText h
+
+        Just (c, restOfT) ->
+          TB.fromLazyText h <> escape c <> quote restOfT
+
+    onEscapable :: Char -> Bool
+    onEscapable c =
+      c == '\"' || c == '\\' || c == '/' || c < '\x20'
+
+    escape :: Char -> Builder
+    escape '\"' = "\\\""
+    escape '\\' = "\\\\"
+    escape '/'  = "\\/"
+    escape '\b' = "\\b"
+    escape '\f' = "\\f"
+    escape '\n' = "\\n"
+    escape '\r' = "\\r"
+    escape '\t' = "\\t"
+    escape c =
+      if c < '\x20' then
+        let
+          h = showHex (ord c) ""
+        in
+        TB.fromString $ "\\u" ++ replicate (4 - length h) '0' ++ h
+      else
+        TB.singleton c

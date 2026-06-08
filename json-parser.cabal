@@ -28,6 +28,7 @@ library internal
   exposed-modules:
     Internal.Data.Json
     Internal.Text.Parser
+    Internal.Text.Printer
 
   build-depends:
     base ^>=4.20,
@@ -45,6 +46,7 @@ test-suite tests
 
   other-modules:
     Test.Internal.Text.ParserSpec
+    Test.Internal.Text.PrinterSpec
 
   build-depends:
     base ^>=4.20,
