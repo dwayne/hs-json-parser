@@ -109,59 +109,59 @@ numberSpec :: Spec
 numberSpec =
   describe "number" $ do
     it "parses zero" $ do
-      parseTillEnd P.number "0" `shouldParse` Number Plus "0" Nothing Nothing
+      parseTillEnd P.number "0" `shouldParse` Num Plus "0" Nothing Nothing
 
     it "parses negative zero" $ do
-      parseTillEnd P.number "-0" `shouldParse` Number Minus "0" Nothing Nothing
+      parseTillEnd P.number "-0" `shouldParse` Num Minus "0" Nothing Nothing
 
     it "parses positive integers" $ do
-      parseTillEnd P.number "1" `shouldParse` Number Plus "1" Nothing Nothing
-      parseTillEnd P.number "2" `shouldParse` Number Plus "2" Nothing Nothing
-      parseTillEnd P.number "3" `shouldParse` Number Plus "3" Nothing Nothing
-      parseTillEnd P.number "4" `shouldParse` Number Plus "4" Nothing Nothing
-      parseTillEnd P.number "5" `shouldParse` Number Plus "5" Nothing Nothing
-      parseTillEnd P.number "6" `shouldParse` Number Plus "6" Nothing Nothing
-      parseTillEnd P.number "7" `shouldParse` Number Plus "7" Nothing Nothing
-      parseTillEnd P.number "8" `shouldParse` Number Plus "8" Nothing Nothing
-      parseTillEnd P.number "9" `shouldParse` Number Plus "9" Nothing Nothing
-      parseTillEnd P.number "123456789" `shouldParse` Number Plus "123456789" Nothing Nothing
+      parseTillEnd P.number "1" `shouldParse` Num Plus "1" Nothing Nothing
+      parseTillEnd P.number "2" `shouldParse` Num Plus "2" Nothing Nothing
+      parseTillEnd P.number "3" `shouldParse` Num Plus "3" Nothing Nothing
+      parseTillEnd P.number "4" `shouldParse` Num Plus "4" Nothing Nothing
+      parseTillEnd P.number "5" `shouldParse` Num Plus "5" Nothing Nothing
+      parseTillEnd P.number "6" `shouldParse` Num Plus "6" Nothing Nothing
+      parseTillEnd P.number "7" `shouldParse` Num Plus "7" Nothing Nothing
+      parseTillEnd P.number "8" `shouldParse` Num Plus "8" Nothing Nothing
+      parseTillEnd P.number "9" `shouldParse` Num Plus "9" Nothing Nothing
+      parseTillEnd P.number "123456789" `shouldParse` Num Plus "123456789" Nothing Nothing
 
     it "parses negative integers" $ do
-      parseTillEnd P.number "-1" `shouldParse` Number Minus "1" Nothing Nothing
-      parseTillEnd P.number "-2" `shouldParse` Number Minus "2" Nothing Nothing
-      parseTillEnd P.number "-3" `shouldParse` Number Minus "3" Nothing Nothing
-      parseTillEnd P.number "-4" `shouldParse` Number Minus "4" Nothing Nothing
-      parseTillEnd P.number "-5" `shouldParse` Number Minus "5" Nothing Nothing
-      parseTillEnd P.number "-6" `shouldParse` Number Minus "6" Nothing Nothing
-      parseTillEnd P.number "-7" `shouldParse` Number Minus "7" Nothing Nothing
-      parseTillEnd P.number "-8" `shouldParse` Number Minus "8" Nothing Nothing
-      parseTillEnd P.number "-9" `shouldParse` Number Minus "9" Nothing Nothing
-      parseTillEnd P.number "-123456789" `shouldParse` Number Minus "123456789" Nothing Nothing
+      parseTillEnd P.number "-1" `shouldParse` Num Minus "1" Nothing Nothing
+      parseTillEnd P.number "-2" `shouldParse` Num Minus "2" Nothing Nothing
+      parseTillEnd P.number "-3" `shouldParse` Num Minus "3" Nothing Nothing
+      parseTillEnd P.number "-4" `shouldParse` Num Minus "4" Nothing Nothing
+      parseTillEnd P.number "-5" `shouldParse` Num Minus "5" Nothing Nothing
+      parseTillEnd P.number "-6" `shouldParse` Num Minus "6" Nothing Nothing
+      parseTillEnd P.number "-7" `shouldParse` Num Minus "7" Nothing Nothing
+      parseTillEnd P.number "-8" `shouldParse` Num Minus "8" Nothing Nothing
+      parseTillEnd P.number "-9" `shouldParse` Num Minus "9" Nothing Nothing
+      parseTillEnd P.number "-123456789" `shouldParse` Num Minus "123456789" Nothing Nothing
 
     it "parses numbers with a fractional part" $ do
-      parseTillEnd P.number "123.456" `shouldParse` Number Plus "123" (Just "456") Nothing
-      parseTillEnd P.number "-123.456" `shouldParse` Number Minus "123" (Just "456") Nothing
-      parseTillEnd P.number "0.5" `shouldParse` Number Plus "0" (Just "5") Nothing
-      parseTillEnd P.number "-0.5" `shouldParse` Number Minus "0" (Just "5") Nothing
-      parseTillEnd P.number "0.005" `shouldParse` Number Plus "0" (Just "005") Nothing
-      parseTillEnd P.number "0.000" `shouldParse` Number Plus "0" (Just "000") Nothing
-      parseTillEnd P.number "-0.000" `shouldParse` Number Minus "0" (Just "000") Nothing
+      parseTillEnd P.number "123.456" `shouldParse` Num Plus "123" (Just "456") Nothing
+      parseTillEnd P.number "-123.456" `shouldParse` Num Minus "123" (Just "456") Nothing
+      parseTillEnd P.number "0.5" `shouldParse` Num Plus "0" (Just "5") Nothing
+      parseTillEnd P.number "-0.5" `shouldParse` Num Minus "0" (Just "5") Nothing
+      parseTillEnd P.number "0.005" `shouldParse` Num Plus "0" (Just "005") Nothing
+      parseTillEnd P.number "0.000" `shouldParse` Num Plus "0" (Just "000") Nothing
+      parseTillEnd P.number "-0.000" `shouldParse` Num Minus "0" (Just "000") Nothing
 
     it "parses numbers with an exponent part" $ do
-      parseTillEnd P.number "123.456E78" `shouldParse` Number Plus "123" (Just "456") (Just (Plus, "78"))
-      parseTillEnd P.number "123.456E+78" `shouldParse` Number Plus "123" (Just "456") (Just (Plus, "78"))
-      parseTillEnd P.number "123.456E-78" `shouldParse` Number Plus "123" (Just "456") (Just (Minus, "78"))
+      parseTillEnd P.number "123.456E78" `shouldParse` Num Plus "123" (Just "456") (Just (Plus, "78"))
+      parseTillEnd P.number "123.456E+78" `shouldParse` Num Plus "123" (Just "456") (Just (Plus, "78"))
+      parseTillEnd P.number "123.456E-78" `shouldParse` Num Plus "123" (Just "456") (Just (Minus, "78"))
 
-      parseTillEnd P.number "123.456e78" `shouldParse` Number Plus "123" (Just "456") (Just (Plus, "78"))
-      parseTillEnd P.number "123.456e+78" `shouldParse` Number Plus "123" (Just "456") (Just (Plus, "78"))
-      parseTillEnd P.number "123.456e-78" `shouldParse` Number Plus "123" (Just "456") (Just (Minus, "78"))
+      parseTillEnd P.number "123.456e78" `shouldParse` Num Plus "123" (Just "456") (Just (Plus, "78"))
+      parseTillEnd P.number "123.456e+78" `shouldParse` Num Plus "123" (Just "456") (Just (Plus, "78"))
+      parseTillEnd P.number "123.456e-78" `shouldParse` Num Plus "123" (Just "456") (Just (Minus, "78"))
 
-      parseTillEnd P.number "123.456E0" `shouldParse` Number Plus "123" (Just "456") (Just (Plus, "0"))
-      parseTillEnd P.number "123.456E00" `shouldParse` Number Plus "123" (Just "456") (Just (Plus, "00"))
-      parseTillEnd P.number "123.456E-0" `shouldParse` Number Plus "123" (Just "456") (Just (Minus, "0"))
+      parseTillEnd P.number "123.456E0" `shouldParse` Num Plus "123" (Just "456") (Just (Plus, "0"))
+      parseTillEnd P.number "123.456E00" `shouldParse` Num Plus "123" (Just "456") (Just (Plus, "00"))
+      parseTillEnd P.number "123.456E-0" `shouldParse` Num Plus "123" (Just "456") (Just (Minus, "0"))
 
     it "consumes trailing spaces" $ do
-      parseTillEnd P.number "0 " `shouldParse` Number Plus "0" Nothing Nothing
+      parseTillEnd P.number "0 " `shouldParse` Num Plus "0" Nothing Nothing
 
 
 stringSpec :: Spec
@@ -221,29 +221,29 @@ arraySpec =
       parseTillEnd P.array "[ ]" `shouldParse` []
 
     it "parses non-empty arrays" $ do
-      parseTillEnd P.array "[null]" `shouldParse` [ JsonNull ]
-      parseTillEnd P.array "[ null ]" `shouldParse` [ JsonNull ]
-      parseTillEnd P.array "[ false, true ]" `shouldParse` [ JsonBoolean False, JsonBoolean True ]
+      parseTillEnd P.array "[null]" `shouldParse` [ Null ]
+      parseTillEnd P.array "[ null ]" `shouldParse` [ Null ]
+      parseTillEnd P.array "[ false, true ]" `shouldParse` [ Boolean False, Boolean True ]
       parseTillEnd P.array "[ 1, 2, 3, 4, 5 ]" `shouldParse`
-        [ JsonNumber (Number Plus "1" Nothing Nothing)
-        , JsonNumber (Number Plus "2" Nothing Nothing)
-        , JsonNumber (Number Plus "3" Nothing Nothing)
-        , JsonNumber (Number Plus "4" Nothing Nothing)
-        , JsonNumber (Number Plus "5" Nothing Nothing)
+        [ Number (Num Plus "1" Nothing Nothing)
+        , Number (Num Plus "2" Nothing Nothing)
+        , Number (Num Plus "3" Nothing Nothing)
+        , Number (Num Plus "4" Nothing Nothing)
+        , Number (Num Plus "5" Nothing Nothing)
         ]
       parseTillEnd P.array "[]" `shouldParse` []
 
     it "parses nested arrays" $ do
-      parseTillEnd P.array "[[[]]]" `shouldParse` [ JsonArray [ JsonArray [] ] ]
+      parseTillEnd P.array "[[[]]]" `shouldParse` [ Array [ Array [] ] ]
 
     it "parses heterogeneous arrays" $ do
       parseTillEnd P.array "[ null, false, true, 1, [], {} ]" `shouldParse`
-        [ JsonNull
-        , JsonBoolean False
-        , JsonBoolean True
-        , JsonNumber (Number Plus "1" Nothing Nothing)
-        , JsonArray []
-        , JsonObject []
+        [ Null
+        , Boolean False
+        , Boolean True
+        , Number (Num Plus "1" Nothing Nothing)
+        , Array []
+        , Object []
         ]
 
     it "consumes trailing spaces" $ do
@@ -258,8 +258,8 @@ objectSpec =
       parseTillEnd P.object "{ }" `shouldParse` []
 
     it "parses non-empty objects" $ do
-      parseTillEnd P.object "{\"a\":null}" `shouldParse` [( "a", JsonNull )]
-      parseTillEnd P.object "{ \"a\": null }" `shouldParse` [( "a", JsonNull )]
+      parseTillEnd P.object "{\"a\":null}" `shouldParse` [( "a", Null )]
+      parseTillEnd P.object "{ \"a\": null }" `shouldParse` [( "a", Null )]
       parseTillEnd P.object
         "{ \"b\": false \
         \, \"c\": true  \
@@ -267,14 +267,14 @@ objectSpec =
         \, \"e\": []    \
         \}              "
         `shouldParse`
-        [ ( "b", JsonBoolean False )
-        , ( "c", JsonBoolean True )
-        , ( "d", JsonNumber (Number Plus "5" Nothing Nothing) )
-        , ( "e", JsonArray [] )
+        [ ( "b", Boolean False )
+        , ( "c", Boolean True )
+        , ( "d", Number (Num Plus "5" Nothing Nothing) )
+        , ( "e", Array [] )
         ]
 
     it "parses nested objects" $ do
-      parseTillEnd P.object "{ \"x\": { \"y\": {} } }" `shouldParse` [( "x", JsonObject [( "y", JsonObject [] )] )]
+      parseTillEnd P.object "{ \"x\": { \"y\": {} } }" `shouldParse` [( "x", Object [( "y", Object [] )] )]
 
     it "consumes trailing spaces" $ do
       parseTillEnd P.object "{} " `shouldParse` []
@@ -284,16 +284,16 @@ valueSpec :: Spec
 valueSpec =
   describe "value" $ do
     it "parses a JSON value" $ do
-      parseTillEnd P.value "null" `shouldParse` JsonNull
-      parseTillEnd P.value "false" `shouldParse` JsonBoolean False
-      parseTillEnd P.value "true" `shouldParse` JsonBoolean True
-      parseTillEnd P.value "123" `shouldParse` JsonNumber (Number Plus "123" Nothing Nothing)
-      parseTillEnd P.value "\"Hello\"" `shouldParse` JsonString "Hello"
-      parseTillEnd P.value "[[], null]" `shouldParse` JsonArray [ JsonArray [], JsonNull ]
-      parseTillEnd P.value "{ \"a\": null }" `shouldParse` JsonObject [( "a", JsonNull )]
+      parseTillEnd P.value "null" `shouldParse` Null
+      parseTillEnd P.value "false" `shouldParse` Boolean False
+      parseTillEnd P.value "true" `shouldParse` Boolean True
+      parseTillEnd P.value "123" `shouldParse` Number (Num Plus "123" Nothing Nothing)
+      parseTillEnd P.value "\"Hello\"" `shouldParse` String "Hello"
+      parseTillEnd P.value "[[], null]" `shouldParse` Array [ Array [], Null ]
+      parseTillEnd P.value "{ \"a\": null }" `shouldParse` Object [( "a", Null )]
 
     it "consumes trailing spaces" $ do
-      parseTillEnd P.value "null " `shouldParse` JsonNull
+      parseTillEnd P.value "null " `shouldParse` Null
 
 
 errorMessagesSpec :: Spec

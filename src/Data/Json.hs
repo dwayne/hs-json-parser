@@ -34,7 +34,7 @@ import qualified Data.ByteString as BS
 import qualified Data.Text as T
 import qualified Data.Text.Encoding as TE
 import qualified Data.Text.Read as TR
-import qualified Internal.Data.Json as J
+import qualified Internal.Data.Json as Json
 import qualified Internal.Text.Parser as P
 import qualified Text.Megaparsec as Megaparsec
 
@@ -49,18 +49,18 @@ import Text.Megaparsec (ParseErrorBundle)
 
 -- | A JSON <https://www.rfc-editor.org/info/rfc8259/#section-3 value>.
 data Json
-  = JsonNull
-  | JsonBoolean Bool
-  | JsonNumber Number
-  | JsonString Text
-  | JsonArray Array
-  | JsonObject Object
+  = Null
+  | Boolean Bool
+  | Number Number
+  | String Text
+  | Array Array
+  | Object Object
   deriving (Eq, Show)
 
 
 -- | A JSON <https://www.rfc-editor.org/info/rfc8259/#section-6 number>.
 data Number
-  = Number
+  = Num
       { numSign :: Sign                   -- ^ The sign.
       , numDigits :: Text                 -- ^ The integer part.
       , numFraction :: Maybe Text         -- ^ The fractional part, if any.
@@ -79,20 +79,20 @@ data Sign
 -- | Construct a 'Number' from an 'Int'.
 numFromInt :: Int -> Number
 numFromInt n
-  | n < 0     = Number Minus (T.show $ -n) Nothing Nothing
-  | otherwise = Number Plus (T.show n) Nothing Nothing
+  | n < 0     = Num Minus (T.show $ -n) Nothing Nothing
+  | otherwise = Num Plus (T.show n) Nothing Nothing
 
 
 -- | Construct a 'Number' from an 'Integer'.
 numFromInteger :: Integer -> Number
 numFromInteger n
-  | n < 0     = Number Minus (T.show $ -n) Nothing Nothing
-  | otherwise = Number Plus (T.show n) Nothing Nothing
+  | n < 0     = Num Minus (T.show $ -n) Nothing Nothing
+  | otherwise = Num Plus (T.show n) Nothing Nothing
 
 
 -- | Convert a 'Number' to 'Text'.
 numToText :: Number -> Text
-numToText (Number s d mf me) =
+numToText (Num s d mf me) =
   signToText s <> d <> fractionToText mf <> exponentToText me
   where
     signToText :: Sign -> Text
@@ -111,7 +111,7 @@ numToText (Number s d mf me) =
 
 -- | Convert a 'Number' to a 'Rational'.
 numToRational :: Number -> Rational
-numToRational (Number s d mf me) =
+numToRational (Num s d mf me) =
   if n < 0 then
     numer % pow10 (-n)
 
@@ -181,20 +181,20 @@ parse :: Text -> Either SyntaxError Json
 parse = fmap convertJson . Megaparsec.parse P.json ""
 
 
-convertJson :: J.Json -> Json
-convertJson J.JsonNull        = JsonNull
-convertJson (J.JsonBoolean b) = JsonBoolean b
-convertJson (J.JsonNumber n)  = JsonNumber $ convertNumber n
-convertJson (J.JsonString t)  = JsonString t
-convertJson (J.JsonArray a)   = JsonArray $ map convertJson a
-convertJson (J.JsonObject o)  = JsonObject $ map (second convertJson) o
+convertJson :: Json.Json -> Json
+convertJson Json.Null        = Null
+convertJson (Json.Boolean b) = Boolean b
+convertJson (Json.Number n)  = Number $ convertNumber n
+convertJson (Json.String t)  = String t
+convertJson (Json.Array a)   = Array $ map convertJson a
+convertJson (Json.Object o)  = Object $ map (second convertJson) o
 
 
-convertNumber :: J.Number -> Number
-convertNumber (J.Number s d f e) =
-  Number (convertSign s) d f (fmap (first convertSign) e)
+convertNumber :: Json.Number -> Number
+convertNumber (Json.Num s d f e) =
+  Num (convertSign s) d f (fmap (first convertSign) e)
 
 
-convertSign :: J.Sign -> Sign
-convertSign J.Plus  = Plus
-convertSign J.Minus = Minus
+convertSign :: Json.Sign -> Sign
+convertSign Json.Plus  = Plus
+convertSign Json.Minus = Minus

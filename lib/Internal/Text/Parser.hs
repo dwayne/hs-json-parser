@@ -51,12 +51,12 @@ json = zeroOrMoreWhitespaces *> value <* eof
 value :: Parser Json
 value =
   choice
-    [ JsonNull <$ null
-    , JsonBoolean <$> boolean
-    , JsonNumber <$> number
-    , JsonString <$> string
-    , JsonArray <$> array
-    , JsonObject <$> object
+    [ Null <$ null
+    , Boolean <$> boolean
+    , Number <$> number
+    , String <$> string
+    , Array <$> array
+    , Object <$> object
     ]
 
 
@@ -104,7 +104,7 @@ number =
   -- e    = %x65 / %x45   ; e E
   -- plus = %x2B          ; +
   --
-  lexeme (Number <$> leadingSign <*> naturalNumber <*> optional fractionalPart <*> optional exponentPart) <?> "a number"
+  lexeme (Num <$> leadingSign <*> naturalNumber <*> optional fractionalPart <*> optional exponentPart) <?> "a number"
   where
     leadingSign :: Parser Sign
     leadingSign = minus <|> pure Plus

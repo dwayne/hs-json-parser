@@ -9,17 +9,17 @@ import Data.Text (Text)
 
 
 data Json
-  = JsonNull
-  | JsonBoolean Bool
-  | JsonNumber Number
-  | JsonString Text
-  | JsonArray Array
-  | JsonObject Object
+  = Null
+  | Boolean Bool
+  | Number Number
+  | String Text
+  | Array Array
+  | Object Object
   deriving (Eq, Show)
 
 
 data Number
-  = Number
+  = Num
       { numSign :: Sign
       , numDigits :: Text
       , numFraction :: Maybe Text
