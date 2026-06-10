@@ -6,6 +6,8 @@ import qualified Data.Text.Lazy as T
 import qualified Data.Text.Lazy.Builder as TB
 
 import Data.Char (ord)
+import Data.Function ((&))
+import Data.List (intersperse)
 import Data.Text.Lazy (Text)
 import Data.Text.Lazy.Builder (Builder)
 import Internal.Data.Json
@@ -22,7 +24,7 @@ pretty numSpaces = TB.toLazyText . prettyHelper state
     n = max 0 numSpaces
 
     spaces :: Builder
-    spaces = mconcat $ replicate n " "
+    spaces = indent n " "
 
     newline :: Builder
     nameSeparator :: Builder
@@ -58,8 +60,8 @@ prettyHelper state json =
     String s ->
       prettyString $ T.fromStrict s
 
-    Array _ ->
-      undefined
+    Array a ->
+      prettyArray state a
 
     Object _ ->
       undefined
@@ -95,37 +97,68 @@ prettyNumber (Num s d mf me) =
 prettyString :: Text -> Builder
 prettyString s =
   TB.singleton '"' <> quote s <> TB.singleton '"'
-  where
-    quote :: Text -> Builder
-    quote s =
-      let
-        (h, t) = T.break onEscapable s
-      in
-      case T.uncons t of
-        Nothing ->
-          TB.fromLazyText h
 
-        Just (c, restOfT) ->
-          TB.fromLazyText h <> escape c <> quote restOfT
 
-    onEscapable :: Char -> Bool
-    onEscapable c =
-      c == '\"' || c == '\\' || c == '/' || c < '\x20'
+quote :: Text -> Builder
+quote s =
+  let
+    (h, t) = T.break onEscapable s
+  in
+  case T.uncons t of
+    Nothing ->
+      TB.fromLazyText h
 
-    escape :: Char -> Builder
-    escape '\"' = "\\\""
-    escape '\\' = "\\\\"
-    escape '/'  = "\\/"
-    escape '\b' = "\\b"
-    escape '\f' = "\\f"
-    escape '\n' = "\\n"
-    escape '\r' = "\\r"
-    escape '\t' = "\\t"
-    escape c =
-      if c < '\x20' then
-        let
-          h = showHex (ord c) ""
-        in
-        TB.fromString $ "\\u" ++ replicate (4 - length h) '0' ++ h
+    Just (c, restOfT) ->
+      TB.fromLazyText h <> escape c <> quote restOfT
+
+
+onEscapable :: Char -> Bool
+onEscapable c =
+  c == '\"' || c == '\\' || c == '/' || c < '\x20'
+
+
+escape :: Char -> Builder
+escape '\"' = "\\\""
+escape '\\' = "\\\\"
+escape '/'  = "\\/"
+escape '\b' = "\\b"
+escape '\f' = "\\f"
+escape '\n' = "\\n"
+escape '\r' = "\\r"
+escape '\t' = "\\t"
+escape c =
+  if c < '\x20' then
+    let
+      h = showHex (ord c) ""
+    in
+    TB.fromString $ "\\u" ++ replicate (4 - length h) '0' ++ h
+  else
+    TB.singleton c
+
+
+prettyArray :: State -> Array -> Builder
+prettyArray state@(State { sLevel = level, sSpaces = spaces, sNewline = newline }) jsons =
+  mconcat
+    [ "["
+    , if null jsons then
+        mempty
+
       else
-        TB.singleton c
+        let
+          nextLevel = level + 1
+
+          nextState = state { sLevel = nextLevel }
+
+          elements =
+            jsons
+              & map (\json -> indent nextLevel spaces <> prettyHelper nextState json)
+              & intersperse ("," <> newline)
+              & mconcat
+        in
+        newline <> elements <> newline <> indent level spaces
+    , "]"
+    ]
+
+
+indent :: Int -> Builder -> Builder
+indent n b = mconcat $ replicate n b
