@@ -8,6 +8,7 @@ import qualified Data.Text.Lazy.Builder as TB
 import Data.Char (ord)
 import Data.Function ((&))
 import Data.List (intersperse)
+import Data.Text (StrictText)
 import Data.Text.Lazy (Text)
 import Data.Text.Lazy.Builder (Builder)
 import Internal.Data.Json
@@ -15,7 +16,7 @@ import Numeric (showHex)
 
 
 pretty :: Int -> Json -> Text
-pretty numSpaces = TB.toLazyText . prettyHelper state
+pretty numSpaces = TB.toLazyText . prettyJson state
   where
     state :: State
     state = State 0 spaces newline nameSeparator
@@ -45,8 +46,8 @@ data State
     }
 
 
-prettyHelper :: State -> Json -> Builder
-prettyHelper state json =
+prettyJson :: State -> Json -> Builder
+prettyJson state json =
   case json of
     Null ->
       "null"
@@ -54,17 +55,17 @@ prettyHelper state json =
     Boolean b ->
       if b then "true" else "false"
 
-    Number number ->
-      prettyNumber number
+    Number n ->
+      prettyNumber n
 
     String s ->
       prettyString $ T.fromStrict s
 
     Array a ->
-      prettyArray state a
+      prettyStructure state "[" "]" prettyJson a
 
     Object o ->
-      prettyObject state o
+      prettyStructure state "{" "}" prettyKeyValue o
 
 
 prettyNumber :: Number -> Builder
@@ -136,11 +137,11 @@ escape c =
     TB.singleton c
 
 
-prettyArray :: State -> Array -> Builder
-prettyArray state@(State { sLevel = level, sSpaces = spaces, sNewline = newline }) jsons =
+prettyStructure :: State -> Builder -> Builder -> (State -> a -> Builder) -> [a] -> Builder
+prettyStructure state@(State { sLevel = level, sSpaces = spaces, sNewline = newline }) begin end toBuilder list =
   mconcat
-    [ "["
-    , if null jsons then
+    [ begin
+    , if null list then
         mempty
 
       else
@@ -150,38 +151,19 @@ prettyArray state@(State { sLevel = level, sSpaces = spaces, sNewline = newline 
           nextState = state { sLevel = nextLevel }
 
           elements =
-            jsons
-              & map (\json -> indent nextLevel spaces <> prettyHelper nextState json)
+            list
+              & map (\x -> indent nextLevel spaces <> toBuilder nextState x)
               & intersperse ("," <> newline)
               & mconcat
         in
         newline <> elements <> newline <> indent level spaces
-    , "]"
+    , end
     ]
 
 
-prettyObject :: State -> Object -> Builder
-prettyObject state@(State { sLevel = level, sSpaces = spaces, sNewline = newline, sNameSeparator = nameSeparator }) kvPairs =
-  mconcat
-    [ "{"
-    , if null kvPairs then
-        mempty
-
-      else
-        let
-          nextLevel = level + 1
-
-          nextState = state { sLevel = nextLevel }
-
-          elements =
-            kvPairs
-              & map (\(name, json) -> indent nextLevel spaces <> prettyString (T.fromStrict name) <> nameSeparator <> prettyHelper nextState json)
-              & intersperse ("," <> newline)
-              & mconcat
-        in
-        newline <> elements <> newline <> indent level spaces
-    , "}"
-    ]
+prettyKeyValue :: State -> (StrictText, Json) -> Builder
+prettyKeyValue state@(State { sNameSeparator = nameSeparator }) (name, json) =
+  prettyString (T.fromStrict name) <> nameSeparator <> prettyJson state json
 
 
 indent :: Int -> Builder -> Builder
