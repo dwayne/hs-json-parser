@@ -18,6 +18,7 @@ spec =
     numbersSpec
     stringsSpec
     arraysSpec
+    objectsSpec
 
 
 literalsSpec :: Spec
@@ -105,6 +106,46 @@ arraysSpec =
               \    ],\n\
               \    []\n\
               \]"
+          )
+        ]
+
+
+objectsSpec :: Spec
+objectsSpec =
+  describe "objects" $ do
+    describe "when numSpaces=0" $
+      itPrettyPrints 0
+        [ ( Object [], Exactly "{}" )
+        , ( Object [ ("a", Null), ("b", Boolean False), ("c", Boolean True), ("d", Number (Num Plus "1" Nothing Nothing)), ("e", String "a") ]
+          , Exactly "{\"a\":null,\"b\":false,\"c\":true,\"d\":1,\"e\":\"a\"}"
+          )
+        , ( Object [ ("a", Object [ ("b", Object [])]) ]
+          , Exactly "{\"a\":{\"b\":{}}}"
+          )
+        ]
+
+    describe "when numSpaces=4" $
+      itPrettyPrints 4
+        [ ( Object [], Exactly "{}" )
+        , ( Object [ ("a", Null), ("b", Boolean False), ("c", Boolean True), ("d", Number (Num Plus "1" Nothing Nothing)), ("e", String "a") ]
+          , WithDescription
+              "{\"a\":null,\"b\":false,\"c\":true,\"d\":1,\"e\":\"a\"}"
+              "{\n\
+              \    \"a\": null,\n\
+              \    \"b\": false,\n\
+              \    \"c\": true,\n\
+              \    \"d\": 1,\n\
+              \    \"e\": \"a\"\n\
+              \}"
+          )
+        , ( Object [ ("a", Object [ ("b", Object [])]) ]
+          , WithDescription
+              "{\"a\":{\"b\":{}}}"
+              "{\n\
+              \    \"a\": {\n\
+              \        \"b\": {}\n\
+              \    }\n\
+              \}"
           )
         ]
 

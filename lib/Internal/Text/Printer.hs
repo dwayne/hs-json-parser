@@ -63,8 +63,8 @@ prettyHelper state json =
     Array a ->
       prettyArray state a
 
-    Object _ ->
-      undefined
+    Object o ->
+      prettyObject state o
 
 
 prettyNumber :: Number -> Builder
@@ -157,6 +157,30 @@ prettyArray state@(State { sLevel = level, sSpaces = spaces, sNewline = newline 
         in
         newline <> elements <> newline <> indent level spaces
     , "]"
+    ]
+
+
+prettyObject :: State -> Object -> Builder
+prettyObject state@(State { sLevel = level, sSpaces = spaces, sNewline = newline, sNameSeparator = nameSeparator }) kvPairs =
+  mconcat
+    [ "{"
+    , if null kvPairs then
+        mempty
+
+      else
+        let
+          nextLevel = level + 1
+
+          nextState = state { sLevel = nextLevel }
+
+          elements =
+            kvPairs
+              & map (\(name, json) -> indent nextLevel spaces <> prettyString (T.fromStrict name) <> nameSeparator <> prettyHelper nextState json)
+              & intersperse ("," <> newline)
+              & mconcat
+        in
+        newline <> elements <> newline <> indent level spaces
+    , "}"
     ]
 
 
