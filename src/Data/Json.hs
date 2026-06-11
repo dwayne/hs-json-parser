@@ -23,6 +23,9 @@ module Data.Json
     -- * Object
   , Object
 
+    -- * Printer
+  , compact, pretty
+
     -- * Parser
   , parse, parseFromFile
 
@@ -36,12 +39,14 @@ import qualified Data.Text.Encoding as TE
 import qualified Data.Text.Read as TR
 import qualified Internal.Data.Json as Json
 import qualified Internal.Text.Parser as P
+import qualified Internal.Text.Printer as Printer
 import qualified Text.Megaparsec as Megaparsec
 
 import Data.Bifunctor (first, second)
 import Data.Ratio ((%))
 import Data.Text (Text)
 import Data.Text.Encoding.Error (UnicodeException)
+import Data.Text.Lazy (toStrict)
 import Data.Void (Void)
 import Prelude hiding (fromIntegral)
 import Text.Megaparsec (ParseErrorBundle)
@@ -153,6 +158,20 @@ type Array = [Json]
 type Object = [(Text, Json)]
 
 
+-- | Render a 'Json' value as 'Text', omitting all whitespace used only for layout.
+compact :: Json -> Text
+compact = pretty 0
+
+
+-- | Render a 'Json' value as 'Text' with configurable indentation.
+--
+-- The 'Int' argument is the indentation width. It sets the number of spaces
+-- added per nesting level. A width of @0@ produces compact, single-line output;
+-- see 'compact'. Negative widths are clamped to @0@.
+pretty :: Int -> Json -> Text
+pretty numSpaces = toStrict . Printer.pretty numSpaces . convertToJson
+
+
 -- | An error that can occur during 'parseFromFile'.
 data Error
   = EncodingError UnicodeException -- ^ The input was not valid UTF-8.
@@ -178,23 +197,44 @@ parseFromFile f = do
 
 -- | Parse a JSON value from 'Text'.
 parse :: Text -> Either SyntaxError Json
-parse = fmap convertJson . Megaparsec.parse P.json ""
+parse = fmap convertFromJson . Megaparsec.parse P.json ""
 
 
-convertJson :: Json.Json -> Json
-convertJson Json.Null        = Null
-convertJson (Json.Boolean b) = Boolean b
-convertJson (Json.Number n)  = Number $ convertNumber n
-convertJson (Json.String t)  = String t
-convertJson (Json.Array a)   = Array $ map convertJson a
-convertJson (Json.Object o)  = Object $ map (second convertJson) o
+-- Converts from the internal representation to the external representation.
+convertFromJson :: Json.Json -> Json
+convertFromJson Json.Null        = Null
+convertFromJson (Json.Boolean b) = Boolean b
+convertFromJson (Json.Number n)  = Number $ convertFromNumber n
+convertFromJson (Json.String t)  = String t
+convertFromJson (Json.Array a)   = Array $ map convertFromJson a
+convertFromJson (Json.Object o)  = Object $ map (second convertFromJson) o
 
 
-convertNumber :: Json.Number -> Number
-convertNumber (Json.Num s d f e) =
-  Num (convertSign s) d f (fmap (first convertSign) e)
+convertFromNumber :: Json.Number -> Number
+convertFromNumber (Json.Num s d f e) =
+  Num (convertFromSign s) d f (fmap (first convertFromSign) e)
 
 
-convertSign :: Json.Sign -> Sign
-convertSign Json.Plus  = Plus
-convertSign Json.Minus = Minus
+convertFromSign :: Json.Sign -> Sign
+convertFromSign Json.Plus  = Plus
+convertFromSign Json.Minus = Minus
+
+
+-- Converts from the external representation to the internal representation.
+convertToJson :: Json -> Json.Json
+convertToJson Null        = Json.Null
+convertToJson (Boolean b) = Json.Boolean b
+convertToJson (Number n)  = Json.Number $ convertToNumber n
+convertToJson (String s)  = Json.String s
+convertToJson (Array a)   = Json.Array $ map convertToJson a
+convertToJson (Object o)  = Json.Object $ map (second convertToJson) o
+
+
+convertToNumber :: Number -> Json.Number
+convertToNumber (Num s d f e) =
+  Json.Num (convertToSign s) d f (fmap (first convertToSign) e)
+
+
+convertToSign :: Sign -> Json.Sign
+convertToSign Plus  = Json.Plus
+convertToSign Minus = Json.Minus
