@@ -9,7 +9,7 @@ module Data.Json
   , Number, Sign(..)
 
     -- ** Construct
-  , numFromInt, numFromInteger
+  , numFromInt, numFromInteger, numFromScientific
 
     -- ** Query
   , numSign, numDigits, numFraction, numExponent
@@ -34,6 +34,7 @@ module Data.Json
   ) where
 
 import qualified Data.ByteString as BS
+import qualified Data.Scientific as Scientific
 import qualified Data.Text as T
 import qualified Data.Text.Encoding as TE
 import qualified Data.Text.Read as TR
@@ -43,7 +44,9 @@ import qualified Internal.Text.Printer as Printer
 import qualified Text.Megaparsec as Megaparsec
 
 import Data.Bifunctor (first, second)
+import Data.Char (intToDigit)
 import Data.Ratio ((%))
+import Data.Scientific (scientific)
 import Data.Text (Text)
 import Data.Text.Encoding.Error (UnicodeException)
 import Data.Text.Lazy (toStrict)
@@ -93,6 +96,37 @@ numFromInteger :: Integer -> Number
 numFromInteger n
   | n < 0     = Num Minus (T.show $ -n) Nothing Nothing
   | otherwise = Num Plus (T.show n) Nothing Nothing
+
+
+-- | Construct a 'Number' from a coefficient, @c@, and a base-10 exponent, @e@.
+--
+-- The value represented is the 'Fractional' number: @fromInteger c * 10 ^^ e@.
+numFromScientific :: Integer -> Int -> Number
+numFromScientific coefficient base10Exponent =
+  let
+    sign :: Sign
+    absCoefficient :: Integer
+    (sign, absCoefficient) =
+      if coefficient < 0 then
+        (Minus, -coefficient)
+
+      else
+        (Plus, coefficient)
+
+    ds :: [Int]
+    e :: Int
+    (ds, e) = Scientific.toDecimalDigits $ scientific absCoefficient base10Exponent
+
+    maybeExponent :: Maybe (Sign, Text)
+    maybeExponent
+      | e == 0    = Nothing
+      | e < 0     = Just (Minus, T.show $ -e)
+      | otherwise = Just (Plus, T.show e)
+
+    fraction :: Text
+    fraction = T.pack $ map intToDigit ds
+  in
+  Num sign "0" (Just fraction) maybeExponent
 
 
 -- | Convert a 'Number' to 'Text'.

@@ -17,6 +17,7 @@ library
     bytestring ^>=0.12,
     internal,
     megaparsec ^>=9.7,
+    scientific ^>=0.3,
     text ^>=2.1
 
 library internal
