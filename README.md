@@ -74,6 +74,9 @@ numToRational :: Number -> Rational
 compact :: Json -> Text
 pretty :: Int -> Json -> Text
 
+writeCompact :: FilePath -> Json -> IO ()
+writePretty :: FilePath -> Int -> Json -> IO ()
+
 parse :: Text -> Either SyntaxError Json
 parseFromFile :: FilePath -> IO (Either Error Json)
 ```

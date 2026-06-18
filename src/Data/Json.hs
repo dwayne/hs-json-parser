@@ -26,6 +26,9 @@ module Data.Json
     -- * Printer
   , compact, pretty
 
+    -- ** Write
+  , writeCompact, writePretty
+
     -- * Parser
   , parse, parseFromFile
 
@@ -37,6 +40,7 @@ import qualified Data.ByteString as BS
 import qualified Data.Scientific as Scientific
 import qualified Data.Text as T
 import qualified Data.Text.Encoding as TE
+import qualified Data.Text.IO.Utf8 as T8
 import qualified Data.Text.Read as TR
 import qualified Internal.Data.Json as Json
 import qualified Internal.Text.Parser as P
@@ -204,6 +208,18 @@ compact = pretty 0
 -- see 'compact'. Negative widths are clamped to @0@.
 pretty :: Int -> Json -> Text
 pretty numSpaces = toStrict . Printer.pretty numSpaces . convertToJson
+
+
+-- | Write the 'compact' rendering of a 'Json' value to a file, UTF-8 encoded.
+writeCompact :: FilePath -> Json -> IO ()
+writeCompact f = writePretty f 0
+
+
+-- | Write the 'pretty' rendering of a 'Json' value to a file, UTF-8 encoded.
+--
+-- The 'Int' argument is the indentation width; see 'pretty'.
+writePretty :: FilePath -> Int -> Json -> IO ()
+writePretty f numSpaces = T8.writeFile f . pretty numSpaces
 
 
 -- | An error that can occur during 'parseFromFile'.
