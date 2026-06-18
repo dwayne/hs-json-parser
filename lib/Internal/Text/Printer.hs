@@ -16,7 +16,7 @@ import Numeric (showHex)
 
 
 pretty :: Int -> Json -> Text
-pretty numSpaces = TB.toLazyText . prettyJson state
+pretty numSpaces json = TB.toLazyText $ prettyJson state json <> newline
   where
     state :: State
     state = State 0 spaces newline nameSeparator

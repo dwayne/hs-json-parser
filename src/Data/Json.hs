@@ -205,7 +205,8 @@ compact = pretty 0
 --
 -- The 'Int' argument is the indentation width. It sets the number of spaces
 -- added per nesting level. A width of @0@ produces compact, single-line output;
--- see 'compact'. Negative widths are clamped to @0@.
+-- see 'compact'. A positive width appends a trailing newline. Negative widths
+-- are clamped to @0@.
 pretty :: Int -> Json -> Text
 pretty numSpaces = toStrict . Printer.pretty numSpaces . convertToJson
 

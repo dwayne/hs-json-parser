@@ -85,7 +85,7 @@ arraysSpec =
 
     describe "when numSpaces=4" $
       itPrettyPrints 4
-        [ ( Array [], Exactly "[]" )
+        [ ( Array [], Exactly "[]\n" )
         , ( Array [ Null, Boolean False, Boolean True, Number (Num Plus "1" Nothing Nothing), String "a" ]
           , WithDescription
               "[null,false,true,1,\"a\"]"
@@ -95,7 +95,8 @@ arraysSpec =
               \    true,\n\
               \    1,\n\
               \    \"a\"\n\
-              \]"
+              \]\n\
+              \"
           )
         , ( Array [ Array [ Array [] ], Array [] ]
           , WithDescription
@@ -105,7 +106,8 @@ arraysSpec =
               \        []\n\
               \    ],\n\
               \    []\n\
-              \]"
+              \]\n\
+              \"
           )
         ]
 
@@ -126,7 +128,7 @@ objectsSpec =
 
     describe "when numSpaces=4" $
       itPrettyPrints 4
-        [ ( Object [], Exactly "{}" )
+        [ ( Object [], Exactly "{}\n" )
         , ( Object [ ("a", Null), ("b", Boolean False), ("c", Boolean True), ("d", Number (Num Plus "1" Nothing Nothing)), ("e", String "a") ]
           , WithDescription
               "{\"a\":null,\"b\":false,\"c\":true,\"d\":1,\"e\":\"a\"}"
@@ -136,7 +138,8 @@ objectsSpec =
               \    \"c\": true,\n\
               \    \"d\": 1,\n\
               \    \"e\": \"a\"\n\
-              \}"
+              \}\n\
+              \"
           )
         , ( Object [ ("a", Object [ ("b", Object [])]) ]
           , WithDescription
@@ -145,7 +148,8 @@ objectsSpec =
               \    \"a\": {\n\
               \        \"b\": {}\n\
               \    }\n\
-              \}"
+              \}\n\
+              \"
           )
         ]
 
