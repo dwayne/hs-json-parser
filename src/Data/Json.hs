@@ -81,33 +81,33 @@ data Number
   deriving (Eq, Show)
 
 
--- | The sign of a 'Number' or its exponent: positive ('Plus') or negative ('Minus').
+-- | The sign of a t'Number' or its exponent: positive ('Plus') or negative ('Minus').
 data Sign
   = Plus
   | Minus
   deriving (Eq, Show)
 
 
--- | Construct a 'Number' from an 'Int'.
+-- | Construct a t'Number' from an 'Int'.
 numFromInt :: Int -> Number
 numFromInt n
   | n < 0     = Num Minus (T.show $ -n) Nothing Nothing
   | otherwise = Num Plus (T.show n) Nothing Nothing
 
 
--- | Construct a 'Number' from an 'Integer'.
+-- | Construct a t'Number' from an 'Integer'.
 numFromInteger :: Integer -> Number
 numFromInteger n
   | n < 0     = Num Minus (T.show $ -n) Nothing Nothing
   | otherwise = Num Plus (T.show n) Nothing Nothing
 
 
--- | Construct a 'Number' from a 'Float'.
+-- | Construct a t'Number' from a 'Float'.
 numFromFloat :: Float -> Number
 numFromFloat = numFromRealFloat
 
 
--- | Construct a 'Number' from a 'Double'.
+-- | Construct a t'Number' from a 'Double'.
 numFromDouble :: Double -> Number
 numFromDouble = numFromRealFloat
 
@@ -120,7 +120,7 @@ numFromRealFloat x =
   numFromScientific (Scientific.coefficient s) (Scientific.base10Exponent s)
 
 
--- | Construct a 'Number' from a coefficient, @c@, and a base-10 exponent, @e@.
+-- | Construct a t'Number' from a coefficient, @c@, and a base-10 exponent, @e@.
 --
 -- The value represented is the 'Fractional' number: @fromInteger c * 10 ^^ e@.
 numFromScientific :: Integer -> Int -> Number
@@ -151,7 +151,7 @@ numFromScientific coefficient base10Exponent =
   Num sign "0" (Just fraction) maybeExponent
 
 
--- | Convert a 'Number' to 'Text'.
+-- | Convert a t'Number' to 'Text'.
 numToText :: Number -> Text
 numToText (Num s d mf me) =
   signToText s <> d <> fractionToText mf <> exponentToText me
@@ -170,7 +170,7 @@ numToText (Num s d mf me) =
     exponentToText (Just (Minus, e)) = "e-" <> e
 
 
--- | Convert a 'Number' to a 'Rational'.
+-- | Convert a t'Number' to a 'Rational'.
 numToRational :: Number -> Rational
 numToRational (Num s d mf me) =
   if n < 0 then
