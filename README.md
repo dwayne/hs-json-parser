@@ -61,6 +61,8 @@ type SyntaxError = ParseErrorBundle Text Void
 
 numFromInt :: Int -> Number
 numFromInteger :: Integer -> Number
+numFromFloat :: Float -> Number
+numFromDouble :: Double -> Number
 numFromScientific :: Integer -> Int -> Number
 
 numSign :: Number -> Sign

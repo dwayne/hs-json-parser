@@ -9,7 +9,7 @@ module Data.Json
   , Number, Sign(..)
 
     -- ** Construct
-  , numFromInt, numFromInteger, numFromScientific
+  , numFromInt, numFromInteger, numFromFloat, numFromDouble, numFromScientific
 
     -- ** Query
   , numSign, numDigits, numFraction, numExponent
@@ -100,6 +100,24 @@ numFromInteger :: Integer -> Number
 numFromInteger n
   | n < 0     = Num Minus (T.show $ -n) Nothing Nothing
   | otherwise = Num Plus (T.show n) Nothing Nothing
+
+
+-- | Construct a 'Number' from a 'Float'.
+numFromFloat :: Float -> Number
+numFromFloat = numFromRealFloat
+
+
+-- | Construct a 'Number' from a 'Double'.
+numFromDouble :: Double -> Number
+numFromDouble = numFromRealFloat
+
+
+numFromRealFloat :: RealFloat a => a -> Number
+numFromRealFloat x =
+  let
+    s = Scientific.fromFloatDigits x
+  in
+  numFromScientific (Scientific.coefficient s) (Scientific.base10Exponent s)
 
 
 -- | Construct a 'Number' from a coefficient, @c@, and a base-10 exponent, @e@.
