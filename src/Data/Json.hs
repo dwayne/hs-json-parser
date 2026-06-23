@@ -1,6 +1,10 @@
 {-# LANGUAGE OverloadedStrings #-}
 
--- | A JSON parser compliant with <https://www.rfc-editor.org/info/rfc8259/ RFC 8259>.
+-- | It provides:
+--
+-- - A 'Json' data structure for representing JSON.
+-- - A JSON parser compliant with <https://www.rfc-editor.org/info/rfc8259/ RFC 8259> which parses JSON into a 'Json' data structure.
+-- - A pretty printer for producing well-formatted JSON as 'Text' or within a file.
 module Data.Json
   ( -- * JSON
     Json(..)
@@ -23,17 +27,17 @@ module Data.Json
     -- * Object
   , Object
 
+    -- * Parser
+  , parse, parseFromFile
+
+    -- ** Errors
+  , Error(..), SyntaxError
+
     -- * Printer
   , compact, pretty
 
     -- ** Write
   , writeCompact, writePretty
-
-    -- * Parser
-  , parse, parseFromFile
-
-    -- * Errors
-  , Error(..), SyntaxError
   ) where
 
 import qualified Data.ByteString as BS
@@ -59,6 +63,11 @@ import Prelude hiding (fromIntegral)
 import Text.Megaparsec (ParseErrorBundle)
 
 
+
+-- JSON
+
+
+
 -- | A JSON <https://www.rfc-editor.org/info/rfc8259/#section-3 value>.
 data Json
   = Null
@@ -68,6 +77,11 @@ data Json
   | Array Array
   | Object Object
   deriving (Eq, Show)
+
+
+
+-- Number
+
 
 
 -- | A JSON <https://www.rfc-editor.org/info/rfc8259/#section-6 number>.
@@ -86,6 +100,11 @@ data Sign
   = Plus
   | Minus
   deriving (Eq, Show)
+
+
+
+-- Number: Create
+
 
 
 -- | Construct a t'Number' from an 'Int'.
@@ -151,6 +170,11 @@ numFromScientific coefficient base10Exponent =
   Num sign "0" (Just fraction) maybeExponent
 
 
+
+-- Number: Convert
+
+
+
 -- | Convert a t'Number' to 'Text'.
 numToText :: Number -> Text
 numToText (Num s d mf me) =
@@ -203,8 +227,18 @@ numToRational (Num s d mf me) =
     textToInteger = either (const 0) fst . TR.decimal
 
 
+
+-- Array
+
+
+
 -- | A JSON <https://www.rfc-editor.org/info/rfc8259/#section-5 array>.
 type Array = [Json]
+
+
+
+-- Object
+
 
 
 -- | A JSON <https://www.rfc-editor.org/info/rfc8259/#section-4 object>.
@@ -214,42 +248,9 @@ type Array = [Json]
 type Object = [(Text, Json)]
 
 
--- | Render a 'Json' value as 'Text', omitting all whitespace used only for layout.
-compact :: Json -> Text
-compact = pretty 0
 
+-- Parser
 
--- | Render a 'Json' value as 'Text' with configurable indentation.
---
--- The 'Int' argument is the indentation width. It sets the number of spaces
--- added per nesting level. A width of @0@ produces compact, single-line output;
--- see 'compact'. A positive width appends a trailing newline. Negative widths
--- are clamped to @0@.
-pretty :: Int -> Json -> Text
-pretty numSpaces = toStrict . Printer.pretty numSpaces . convertToJson
-
-
--- | Write the 'compact' rendering of a 'Json' value to a file, UTF-8 encoded.
-writeCompact :: FilePath -> Json -> IO ()
-writeCompact f = writePretty f 0
-
-
--- | Write the 'pretty' rendering of a 'Json' value to a file, UTF-8 encoded.
---
--- The 'Int' argument is the indentation width; see 'pretty'.
-writePretty :: FilePath -> Int -> Json -> IO ()
-writePretty f numSpaces = T8.writeFile f . pretty numSpaces
-
-
--- | An error that can occur during 'parseFromFile'.
-data Error
-  = EncodingError UnicodeException -- ^ The input was not valid UTF-8.
-  | SyntaxError SyntaxError        -- ^ The input was not valid JSON.
-  deriving (Eq, Show)
-
-
--- | An error that can occur during 'parse' indicating the input was not valid JSON.
-type SyntaxError = ParseErrorBundle Text Void
 
 
 -- | Parse a JSON value from a file.
@@ -269,7 +270,64 @@ parse :: Text -> Either SyntaxError Json
 parse = fmap convertFromJson . Megaparsec.parse P.json ""
 
 
--- Converts from the internal representation to the external representation.
+
+-- Parser: Errors
+
+
+
+-- | An error that can occur during 'parseFromFile'.
+data Error
+  = EncodingError UnicodeException -- ^ The input was not valid UTF-8.
+  | SyntaxError SyntaxError        -- ^ The input was not valid JSON.
+  deriving (Eq, Show)
+
+
+-- | An error that can occur during 'parse' indicating the input was not valid JSON.
+type SyntaxError = ParseErrorBundle Text Void
+
+
+
+-- Printer
+
+
+
+-- | Render a 'Json' value as 'Text', omitting all whitespace used only for layout.
+compact :: Json -> Text
+compact = pretty 0
+
+
+-- | Render a 'Json' value as 'Text' with configurable indentation.
+--
+-- The 'Int' argument is the indentation width. It sets the number of spaces
+-- added per nesting level. A width of @0@ produces compact, single-line output;
+-- see 'compact'. A positive width appends a trailing newline. Negative widths
+-- are clamped to @0@.
+pretty :: Int -> Json -> Text
+pretty numSpaces = toStrict . Printer.pretty numSpaces . convertToJson
+
+
+
+-- Printer: Write
+
+
+
+-- | Write the 'compact' rendering of a 'Json' value to a file, UTF-8 encoded.
+writeCompact :: FilePath -> Json -> IO ()
+writeCompact f = writePretty f 0
+
+
+-- | Write the 'pretty' rendering of a 'Json' value to a file, UTF-8 encoded.
+--
+-- The 'Int' argument is the indentation width; see 'pretty'.
+writePretty :: FilePath -> Int -> Json -> IO ()
+writePretty f numSpaces = T8.writeFile f . pretty numSpaces
+
+
+
+-- Converters from the internal representation to the external representation
+
+
+
 convertFromJson :: Json.Json -> Json
 convertFromJson Json.Null        = Null
 convertFromJson (Json.Boolean b) = Boolean b
@@ -289,7 +347,11 @@ convertFromSign Json.Plus  = Plus
 convertFromSign Json.Minus = Minus
 
 
--- Converts from the external representation to the internal representation.
+
+-- Converters from the external representation to the internal representation
+
+
+
 convertToJson :: Json -> Json.Json
 convertToJson Null        = Json.Null
 convertToJson (Boolean b) = Json.Boolean b
