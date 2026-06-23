@@ -85,7 +85,7 @@ arraysSpec =
 
     describe "when numSpaces=4" $
       itPrettyPrints 4
-        [ ( Array [], Exactly "[]\n" )
+        [ ( Array [], WithDescription "[]" "[]\n" )
         , ( Array [ Null, Boolean False, Boolean True, Number (Num Plus "1" Nothing Nothing), String "a" ]
           , WithDescription
               "[null,false,true,1,\"a\"]"
@@ -128,7 +128,7 @@ objectsSpec =
 
     describe "when numSpaces=4" $
       itPrettyPrints 4
-        [ ( Object [], Exactly "{}\n" )
+        [ ( Object [], WithDescription "{}" "{}\n" )
         , ( Object [ ("a", Null), ("b", Boolean False), ("c", Boolean True), ("d", Number (Num Plus "1" Nothing Nothing)), ("e", String "a") ]
           , WithDescription
               "{\"a\":null,\"b\":false,\"c\":true,\"d\":1,\"e\":\"a\"}"
