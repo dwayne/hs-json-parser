@@ -55,9 +55,9 @@ stringsSpec =
   describe "strings" $
     itPrettyPrints 0
       [ ( String "a", Exactly "\"a\"" )
+      , ( String "/", Exactly "\"/\"" )
       , ( String "\"", Exactly "\"\\\"\"" )
       , ( String "\\", Exactly "\"\\\\\"" )
-      , ( String "/", Exactly "\"\\/\"" )
       , ( String "\b", Exactly "\"\\b\"" )
       , ( String "\f", Exactly "\"\\f\"" )
       , ( String "\n", Exactly "\"\\n\"" )

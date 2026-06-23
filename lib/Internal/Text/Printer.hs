@@ -115,13 +115,12 @@ quote s =
 
 onEscapable :: Char -> Bool
 onEscapable c =
-  c == '\"' || c == '\\' || c == '/' || c < '\x20'
+  c == '\"' || c == '\\' || c < '\x20'
 
 
 escape :: Char -> Builder
 escape '\"' = "\\\""
 escape '\\' = "\\\\"
-escape '/'  = "\\/"
 escape '\b' = "\\b"
 escape '\f' = "\\f"
 escape '\n' = "\\n"
