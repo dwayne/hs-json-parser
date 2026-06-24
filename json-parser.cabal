@@ -5,16 +5,10 @@ version: 0.1.0.0
 
 synopsis: A JSON parser compliant with RFC 8259
 description:
-  A JSON parser compliant with RFC 8259.
-  .
-  JSON values are represented by the @Json@ type. Text and files are parsed
-  into @Json@ values with @parse@ and @parseFromFile@.
-  .
-  Numbers can be constructed from @Int@, @Integer@, @Float@, @Double@, and
-  scientific notation.
-  .
-  @Json@ values render to @Text@ with @compact@ and @pretty@, or write to a
-  file with @writeCompact@ and @writePretty@.
+  A JSON parser, compliant with <https://www.rfc-editor.org/info/rfc8259/ RFC 8259>,
+  which parses JSON into a @Json@ data structure.
+
+  @Json@ values can be pretty-printed to @Text@ or a file.
 
 license: BSD-3-Clause
 license-file: LICENSE
