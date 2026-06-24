@@ -4,13 +4,11 @@ A JSON parser compliant with [RFC 8259](https://www.rfc-editor.org/info/rfc8259/
 
 ## Usage
 
-This package is distributed through its Git repository rather than Hackage. Add a `source-repository-package` stanza to `cabal.project` for it.
+This package is distributed through its Git repository rather than Hackage. Add a `source-repository-package` stanza to your `cabal.project` to use it.
 
-`cabal.project`
+In `cabal.project`:
 
 ```
-packages: .
-
 source-repository-package
   type: git
   location: git@github.com:dwayne/hs-json-parser.git
@@ -19,7 +17,7 @@ source-repository-package
 
 **N.B.** _Omitting the tag tracks the default branch and sacrifices reproducibility._
 
-`example.cabal`
+In `example.cabal`:
 
 ```
 build-depends:
