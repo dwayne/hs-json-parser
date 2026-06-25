@@ -31,11 +31,29 @@ build-depends:
 
 import qualified Data.Json as Json
 
-Json.parse "{\"name\": \"Ada\", \"age\": 36, \"email\": null}"
+Json.parse "null"
+-- Right Null
+
+Json.parse "false"
+-- Right (Boolean False)
+
+Json.parse "true"
+-- Right (Boolean True)
+
+Json.parse "1.2345e-67890"
+-- Right (Number (Num { numSign = Plus, numDigits = "1", numFraction = Just "2345", numExponent = Just (Minus,"67890") }))
+
+Json.parse "\"Hask\\u0065ll\""
+-- Right (String "Haskell")
+
+Json.parse "[true, false, true]"
+-- Right (Array [ Boolean True, Boolean False, Boolean True ])
+
+Json.parse "{\"name\": \"Douglas\", \"age\": 71, \"email\": null}"
 -- Right
 --   (Object
---     [ ( "name", String "Ada" )
---     , ( "age", Number (Num { numSign = Plus, numDigits = "36", numFraction = Nothing, numExponent = Nothing }) )
+--     [ ( "name", String "Douglas" )
+--     , ( "age", Number (Num { numSign = Plus, numDigits = "71", numFraction = Nothing, numExponent = Nothing }) )
 --     , ( "email", Null )
 --     ]
 --   )
@@ -51,16 +69,25 @@ import qualified Data.Text.IO as TIO
 
 import Data.Json (Json(..))
 
+TIO.putStrLn $ Json.compact
+  (Object
+    [ ( "name", String "Douglas" )
+    , ( "age", Number (Json.numFromInt 71) )
+    , ( "email", Null )
+    ]
+  )
+-- {"name":"Douglas","age":71,"email":null}
+
 TIO.putStrLn $ Json.pretty 4
   (Object
-    [ ( "name", String "Ada" )
-    , ( "age", Number (Json.numFromInt 36) )
+    [ ( "name", String "Douglas" )
+    , ( "age", Number (Json.numFromInt 71) )
     , ( "email", Null )
     ]
   )
 -- {
---     "name": "Ada",
---     "age": 36,
+--     "name": "Douglas",
+--     "age": 71,
 --     "email": null
 -- }
 ```
