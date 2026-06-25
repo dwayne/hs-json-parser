@@ -18,6 +18,9 @@ maintainer: maintainer@dwaynecrooks.com
 
 category: Text, JSON
 
+extra-doc-files:
+  README.md
+
 source-repository head
   type: git
   location: https://github.com/dwayne/hs-json-parser
