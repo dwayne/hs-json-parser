@@ -15,8 +15,8 @@ import Internal.Data.Json
 import Numeric (showHex)
 
 
-pretty :: Int -> Json -> Text
-pretty numSpaces json = TB.toLazyText $ prettyJson state json <> newline
+pretty :: Int -> Json -> Builder
+pretty numSpaces = prettyJson state
   where
     state :: State
     state = State 0 spaces newline nameSeparator

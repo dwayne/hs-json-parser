@@ -45,6 +45,7 @@ import qualified Data.Scientific as Scientific
 import qualified Data.Text as T
 import qualified Data.Text.Encoding as TE
 import qualified Data.Text.IO.Utf8 as T8
+import qualified Data.Text.Lazy.Builder as TB
 import qualified Data.Text.Read as TR
 import qualified Internal.Data.Json as Json
 import qualified Internal.Text.Parser as P
@@ -293,17 +294,18 @@ type SyntaxError = ParseErrorBundle Text Void
 
 -- | Render a 'Json' value as 'Text', omitting all whitespace used only for layout.
 compact :: Json -> Text
-compact = pretty 0
+compact =
+  pretty 0
 
 
 -- | Render a 'Json' value as 'Text' with configurable indentation.
 --
 -- The 'Int' argument is the indentation width. It sets the number of spaces
 -- added per nesting level. A width of @0@ produces compact, single-line output;
--- see 'compact'. A positive width appends a trailing newline. Negative widths
--- are clamped to @0@.
+-- see 'compact'. Negative widths are clamped to @0@.
 pretty :: Int -> Json -> Text
-pretty numSpaces = toStrict . Printer.pretty numSpaces . convertToJson
+pretty numSpaces =
+  toStrict . TB.toLazyText . Printer.pretty numSpaces . convertToJson
 
 
 
@@ -313,14 +315,21 @@ pretty numSpaces = toStrict . Printer.pretty numSpaces . convertToJson
 
 -- | Write the 'compact' rendering of a 'Json' value to a file, UTF-8 encoded.
 writeCompact :: FilePath -> Json -> IO ()
-writeCompact f = writePretty f 0
+writeCompact f =
+  writePretty f 0
 
 
 -- | Write the 'pretty' rendering of a 'Json' value to a file, UTF-8 encoded.
 --
--- The 'Int' argument is the indentation width; see 'pretty'.
+-- The 'Int' argument is the indentation width; see 'pretty'. A positive width
+-- appends a trailing newline.
 writePretty :: FilePath -> Int -> Json -> IO ()
-writePretty f numSpaces = T8.writeFile f . pretty numSpaces
+writePretty f numSpaces json =
+  T8.writeFile f $ toStrict $ TB.toLazyText $ Printer.pretty numSpaces (convertToJson json) <> newline
+  where
+    newline :: TB.Builder
+    newline =
+      if numSpaces > 0 then "\n" else ""
 
 
 

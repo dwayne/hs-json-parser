@@ -51,7 +51,7 @@ import qualified Data.Text.IO as TIO
 
 import Data.Json (Json(..))
 
-TIO.putStr $ Json.pretty 4
+TIO.putStrLn $ Json.pretty 4
   (Object
     [ ( "name", String "Ada" )
     , ( "age", Number (Json.numFromInt 36) )
@@ -63,7 +63,6 @@ TIO.putStr $ Json.pretty 4
 --     "age": 36,
 --     "email": null
 -- }
---
 ```
 
 ## Public API

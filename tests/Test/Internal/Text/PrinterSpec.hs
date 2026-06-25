@@ -3,6 +3,7 @@
 module Test.Internal.Text.PrinterSpec (spec) where
 
 import qualified Data.Text.Lazy as T
+import qualified Data.Text.Lazy.Builder as TB
 import qualified Internal.Text.Printer as P
 
 import Data.Foldable (for_)
@@ -85,7 +86,7 @@ arraysSpec =
 
     describe "when numSpaces=4" $
       itPrettyPrints 4
-        [ ( Array [], WithDescription "[]" "[]\n" )
+        [ ( Array [], WithDescription "[]" "[]" )
         , ( Array [ Null, Boolean False, Boolean True, Number (Num Plus "1" Nothing Nothing), String "a" ]
           , WithDescription
               "[null,false,true,1,\"a\"]"
@@ -95,7 +96,7 @@ arraysSpec =
               \    true,\n\
               \    1,\n\
               \    \"a\"\n\
-              \]\n\
+              \]\
               \"
           )
         , ( Array [ Array [ Array [] ], Array [] ]
@@ -106,7 +107,7 @@ arraysSpec =
               \        []\n\
               \    ],\n\
               \    []\n\
-              \]\n\
+              \]\
               \"
           )
         ]
@@ -128,7 +129,7 @@ objectsSpec =
 
     describe "when numSpaces=4" $
       itPrettyPrints 4
-        [ ( Object [], WithDescription "{}" "{}\n" )
+        [ ( Object [], WithDescription "{}" "{}" )
         , ( Object [ ("a", Null), ("b", Boolean False), ("c", Boolean True), ("d", Number (Num Plus "1" Nothing Nothing)), ("e", String "a") ]
           , WithDescription
               "{\"a\":null,\"b\":false,\"c\":true,\"d\":1,\"e\":\"a\"}"
@@ -138,7 +139,7 @@ objectsSpec =
               \    \"c\": true,\n\
               \    \"d\": 1,\n\
               \    \"e\": \"a\"\n\
-              \}\n\
+              \}\
               \"
           )
         , ( Object [ ("a", Object [ ("b", Object [])]) ]
@@ -148,7 +149,7 @@ objectsSpec =
               \    \"a\": {\n\
               \        \"b\": {}\n\
               \    }\n\
-              \}\n\
+              \}\
               \"
           )
         ]
@@ -168,7 +169,7 @@ itPrettyPrints :: Int -> [(Json, Output)] -> Spec
 itPrettyPrints numSpaces cases =
   for_ cases $ \(input, output) ->
     it ("pretty prints " <> toDescription output) $
-      P.pretty numSpaces input `shouldBe` toExpected output
+      TB.toLazyText (P.pretty numSpaces input) `shouldBe` toExpected output
 
 
 toDescription :: Output -> String
