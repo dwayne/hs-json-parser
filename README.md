@@ -2,6 +2,8 @@
 
 A JSON parser compliant with [RFC 8259](https://www.rfc-editor.org/info/rfc8259/).
 
+It is tested against the [`nst/JSONTestSuite`](https://github.com/nst/JSONTestSuite) to ensure compliance with the RFC.
+
 ## Usage
 
 This package is distributed through its Git repository rather than Hackage. Add a `source-repository-package` stanza to your `cabal.project` to use it.
