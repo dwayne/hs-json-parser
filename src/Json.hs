@@ -5,7 +5,7 @@
 -- - A 'Json' data structure for representing JSON.
 -- - A JSON parser compliant with <https://www.rfc-editor.org/info/rfc8259/ RFC 8259> which parses JSON into a 'Json' data structure.
 -- - A pretty printer for producing well-formatted JSON as 'Text' or within a file.
-module Data.Json
+module Json
   ( -- * JSON
     Json(..)
 

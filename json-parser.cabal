@@ -16,7 +16,7 @@ license-file: LICENSE
 author: Dwayne Crooks
 maintainer: maintainer@dwaynecrooks.com
 
-category: Data, Parser, Pretty Printer, JSON
+category: JSON, Parser, Pretty Printer
 
 extra-doc-files:
   README.md
@@ -32,7 +32,7 @@ library
   ghc-options: -Wall
 
   exposed-modules:
-    Data.Json
+    Json
 
     --
     -- These internal modules are exposed so I can test their implementation details.
