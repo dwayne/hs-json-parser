@@ -47,12 +47,11 @@ import qualified Data.Text.Encoding as TE
 import qualified Data.Text.IO.Utf8 as T8
 import qualified Data.Text.Lazy.Builder as TB
 import qualified Data.Text.Read as TR
-import qualified Internal.Data.Json as Json
 import qualified Internal.Text.Parser as P
 import qualified Internal.Text.Printer as Printer
 import qualified Text.Megaparsec as Megaparsec
 
-import Data.Bifunctor (first, second)
+import Data.Bifunctor (first)
 import Data.Char (intToDigit)
 import Data.Ratio ((%))
 import Data.Scientific (scientific)
@@ -60,47 +59,9 @@ import Data.Text (Text)
 import Data.Text.Encoding.Error (UnicodeException)
 import Data.Text.Lazy (toStrict)
 import Data.Void (Void)
+import Internal.Data.Json
 import Prelude hiding (fromIntegral)
 import Text.Megaparsec (ParseErrorBundle)
-
-
-
--- JSON
-
-
-
--- | A JSON <https://www.rfc-editor.org/info/rfc8259/#section-3 value>.
-data Json
-  = Null
-  | Boolean Bool
-  | Number Number
-  | String Text
-  | Array Array
-  | Object Object
-  deriving (Eq, Show)
-
-
-
--- Number
-
-
-
--- | A JSON <https://www.rfc-editor.org/info/rfc8259/#section-6 number>.
-data Number
-  = Num
-      { numSign :: Sign                   -- ^ The sign.
-      , numDigits :: Text                 -- ^ The integer part.
-      , numFraction :: Maybe Text         -- ^ The fractional part, if any.
-      , numExponent :: Maybe (Sign, Text) -- ^ The exponent, if any.
-      }
-  deriving (Eq, Show)
-
-
--- | The sign of a t'Number' or its exponent: positive ('Plus') or negative ('Minus').
-data Sign
-  = Plus
-  | Minus
-  deriving (Eq, Show)
 
 
 
@@ -229,27 +190,6 @@ numToRational (Num s d mf me) =
 
 
 
--- Array
-
-
-
--- | A JSON <https://www.rfc-editor.org/info/rfc8259/#section-5 array>.
-type Array = [Json]
-
-
-
--- Object
-
-
-
--- | A JSON <https://www.rfc-editor.org/info/rfc8259/#section-4 object>.
---
--- Represented as a list of name/value pairs, preserving insertion order
--- and allowing duplicate keys, as permitted by the RFC.
-type Object = [(Text, Json)]
-
-
-
 -- Parser
 
 
@@ -268,7 +208,7 @@ parseFromFile f = do
 
 -- | Parse a JSON value from 'Text'.
 parse :: Text -> Either SyntaxError Json
-parse = fmap convertFromJson . Megaparsec.parse P.json ""
+parse = Megaparsec.parse P.json ""
 
 
 
@@ -305,7 +245,7 @@ compact =
 -- see 'compact'. Negative widths are clamped to @0@.
 pretty :: Int -> Json -> Text
 pretty numSpaces =
-  toStrict . TB.toLazyText . Printer.pretty numSpaces . convertToJson
+  toStrict . TB.toLazyText . Printer.pretty numSpaces
 
 
 
@@ -325,56 +265,8 @@ writeCompact f =
 -- appends a trailing newline.
 writePretty :: FilePath -> Int -> Json -> IO ()
 writePretty f numSpaces json =
-  T8.writeFile f $ toStrict $ TB.toLazyText $ Printer.pretty numSpaces (convertToJson json) <> newline
+  T8.writeFile f $ toStrict $ TB.toLazyText $ Printer.pretty numSpaces json <> newline
   where
     newline :: TB.Builder
     newline =
       if numSpaces > 0 then "\n" else ""
-
-
-
--- Converters from the internal representation to the external representation
-
-
-
-convertFromJson :: Json.Json -> Json
-convertFromJson Json.Null        = Null
-convertFromJson (Json.Boolean b) = Boolean b
-convertFromJson (Json.Number n)  = Number $ convertFromNumber n
-convertFromJson (Json.String t)  = String t
-convertFromJson (Json.Array a)   = Array $ map convertFromJson a
-convertFromJson (Json.Object o)  = Object $ map (second convertFromJson) o
-
-
-convertFromNumber :: Json.Number -> Number
-convertFromNumber (Json.Num s d f e) =
-  Num (convertFromSign s) d f (fmap (first convertFromSign) e)
-
-
-convertFromSign :: Json.Sign -> Sign
-convertFromSign Json.Plus  = Plus
-convertFromSign Json.Minus = Minus
-
-
-
--- Converters from the external representation to the internal representation
-
-
-
-convertToJson :: Json -> Json.Json
-convertToJson Null        = Json.Null
-convertToJson (Boolean b) = Json.Boolean b
-convertToJson (Number n)  = Json.Number $ convertToNumber n
-convertToJson (String s)  = Json.String s
-convertToJson (Array a)   = Json.Array $ map convertToJson a
-convertToJson (Object o)  = Json.Object $ map (second convertToJson) o
-
-
-convertToNumber :: Number -> Json.Number
-convertToNumber (Num s d f e) =
-  Json.Num (convertToSign s) d f (fmap (first convertToSign) e)
-
-
-convertToSign :: Sign -> Json.Sign
-convertToSign Plus  = Json.Plus
-convertToSign Minus = Json.Minus

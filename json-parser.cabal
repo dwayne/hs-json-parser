@@ -34,28 +34,19 @@ library
   exposed-modules:
     Data.Json
 
-  build-depends:
-    base ^>=4.20,
-    bytestring ^>=0.12,
-    internal,
-    megaparsec ^>=9.7,
-    scientific ^>=0.3,
-    text ^>=2.1
-
-library internal
-  default-language: Haskell2010
-  hs-source-dirs: lib
-
-  ghc-options: -Wall
-
-  exposed-modules:
+    --
+    -- These internal modules are exposed so I can test their implementation details.
+    --
     Internal.Data.Json
     Internal.Text.Parser
     Internal.Text.Printer
+    -- TODO: Why not Internal.Json, Internal.Parser, and Internal.Printer?
 
   build-depends:
     base ^>=4.20,
+    bytestring ^>=0.12,
     megaparsec ^>=9.7,
+    scientific ^>=0.3,
     text ^>=2.1
 
 test-suite tests
@@ -77,7 +68,7 @@ test-suite tests
     filepath,
     hspec,
     hspec-megaparsec,
-    internal,
+    json-parser,
     megaparsec,
     text
 
