@@ -16,7 +16,7 @@ license-file: LICENSE
 author: Dwayne Crooks
 maintainer: maintainer@dwaynecrooks.com
 
-category: Text, JSON
+category: Data, Parser, Pretty Printer, JSON
 
 extra-doc-files:
   README.md
