@@ -1,6 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-module Internal.Text.Printer (pretty) where
+module Internal.Printer (pretty) where
 
 import qualified Data.Text.Lazy as T
 import qualified Data.Text.Lazy.Builder as TB
@@ -11,7 +11,7 @@ import Data.List (intersperse)
 import Data.Text (StrictText)
 import Data.Text.Lazy (Text)
 import Data.Text.Lazy.Builder (Builder)
-import Internal.Data.Json
+import Internal.Json
 import Numeric (showHex)
 
 

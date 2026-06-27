@@ -37,10 +37,9 @@ library
     --
     -- These internal modules are exposed so I can test their implementation details.
     --
-    Internal.Data.Json
-    Internal.Text.Parser
-    Internal.Text.Printer
-    -- TODO: Why not Internal.Json, Internal.Parser, and Internal.Printer?
+    Internal.Json
+    Internal.Parser
+    Internal.Printer
 
   build-depends:
     base ^>=4.20,
@@ -58,8 +57,8 @@ test-suite tests
   ghc-options: -Wall
 
   other-modules:
-    Test.Internal.Text.ParserSpec
-    Test.Internal.Text.PrinterSpec
+    Test.Internal.ParserSpec
+    Test.Internal.PrinterSpec
 
   build-depends:
     base,

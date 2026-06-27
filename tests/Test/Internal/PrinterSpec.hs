@@ -1,14 +1,14 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-module Test.Internal.Text.PrinterSpec (spec) where
+module Test.Internal.PrinterSpec (spec) where
 
 import qualified Data.Text.Lazy as T
 import qualified Data.Text.Lazy.Builder as TB
-import qualified Internal.Text.Printer as P
+import qualified Internal.Printer as P
 
 import Data.Foldable (for_)
 import Data.Text.Lazy (Text)
-import Internal.Data.Json
+import Internal.Json
 import Test.Hspec
 
 

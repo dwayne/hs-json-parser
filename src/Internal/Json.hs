@@ -1,5 +1,5 @@
 -- | A 'Json' data structure for representing JSON.
-module Internal.Data.Json
+module Internal.Json
   ( Json(..)
   , Number(..), Sign(..)
   , Array

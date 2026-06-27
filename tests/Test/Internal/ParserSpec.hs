@@ -1,15 +1,15 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-module Test.Internal.Text.ParserSpec (spec) where
+module Test.Internal.ParserSpec (spec) where
 
 import qualified Data.ByteString as BS
 import qualified Data.Text.Encoding as TE
-import qualified Internal.Text.Parser as P
+import qualified Internal.Parser as P
 
 import Data.List (isInfixOf, isPrefixOf, isSuffixOf, sortOn)
 import Data.Text (Text)
 import Data.Text.Encoding.Error (UnicodeException)
-import Internal.Data.Json
+import Internal.Json
 import System.Directory (listDirectory)
 import System.Environment (lookupEnv)
 import System.FilePath ((</>))

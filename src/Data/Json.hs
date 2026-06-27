@@ -47,8 +47,8 @@ import qualified Data.Text.Encoding as TE
 import qualified Data.Text.IO.Utf8 as T8
 import qualified Data.Text.Lazy.Builder as TB
 import qualified Data.Text.Read as TR
-import qualified Internal.Text.Parser as P
-import qualified Internal.Text.Printer as Printer
+import qualified Internal.Parser as P
+import qualified Internal.Printer as Printer
 import qualified Text.Megaparsec as Megaparsec
 
 import Data.Bifunctor (first)
@@ -59,7 +59,7 @@ import Data.Text (Text)
 import Data.Text.Encoding.Error (UnicodeException)
 import Data.Text.Lazy (toStrict)
 import Data.Void (Void)
-import Internal.Data.Json
+import Internal.Json
 import Prelude hiding (fromIntegral)
 import Text.Megaparsec (ParseErrorBundle)
 

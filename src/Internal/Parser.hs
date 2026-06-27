@@ -1,6 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-module Internal.Text.Parser
+module Internal.Parser
     ( Parser, Error
     , json, value
     , null, false, true, boolean
@@ -20,7 +20,7 @@ import Control.Applicative ((<|>), empty)
 import Control.Monad (void)
 import Data.Text (Text)
 import Data.Void (Void)
-import Internal.Data.Json
+import Internal.Json
 import Prelude hiding (null)
 import Text.Megaparsec
   ( (<?>)
