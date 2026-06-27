@@ -5,10 +5,9 @@ version: 0.1.0.0
 
 synopsis: A JSON parser compliant with RFC 8259
 description:
-  A JSON parser, compliant with <https://www.rfc-editor.org/info/rfc8259/ RFC 8259>,
-  which parses JSON into a @Json@ data structure.
+  A JSON parser compliant with <https://www.rfc-editor.org/info/rfc8259/ RFC 8259>. It parses JSON values into a Haskell data structure.
 
-  @Json@ values can be pretty-printed to @Text@ or a file.
+  A pretty printer is also provided for producing nicely formatted JSON values.
 
 license: BSD-3-Clause
 license-file: LICENSE

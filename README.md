@@ -31,7 +31,7 @@ build-depends:
 ```haskell
 {-# LANGUAGE OverloadedStrings #-}
 
-import qualified Data.Json as Json
+import qualified Json
 
 Json.parse "null"
 -- Right Null
@@ -66,10 +66,10 @@ Json.parse "{\"name\": \"Douglas\", \"age\": 71, \"email\": null}"
 ```haskell
 {-# LANGUAGE OverloadedStrings #-}
 
-import qualified Data.Json as Json
 import qualified Data.Text.IO as TIO
+import qualified Json
 
-import Data.Json (Json(..))
+import Json (Json(..))
 
 TIO.putStrLn $ Json.compact
   (Object
@@ -133,7 +133,7 @@ numFromInt :: Int -> Number
 numFromInteger :: Integer -> Number
 numFromFloat :: Float -> Number
 numFromDouble :: Double -> Number
-numFromScientific :: Integer -> Int -> Number
+numFromCoefficientAndExponent :: Integer -> Int -> Number
 
 -- Number: Query
 

@@ -1,5 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 
+-- | For internal use only.
 module Internal.Parser
     ( Parser, Error
     , json, value

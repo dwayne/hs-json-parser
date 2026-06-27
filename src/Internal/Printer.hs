@@ -1,5 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 
+-- | For internal use only.
 module Internal.Printer (pretty) where
 
 import qualified Data.Text.Lazy as T

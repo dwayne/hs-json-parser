@@ -2,29 +2,29 @@
 
 -- | It provides:
 --
--- - A 'Json' data structure for representing JSON.
--- - A JSON parser compliant with <https://www.rfc-editor.org/info/rfc8259/ RFC 8259> which parses JSON into a 'Json' data structure.
--- - A pretty printer for producing well-formatted JSON as 'Text' or within a file.
+-- - A data structure for working with JSON values in Haskell.
+-- - A JSON parser compliant with <https://www.rfc-editor.org/info/rfc8259/ RFC 8259>.
+-- - A pretty printer for producing nicely formatted JSON values.
 module Json
-  ( -- * JSON
+  ( -- * Json
     Json(..)
 
-    -- * Number
+    -- ** Number
   , Number, Sign(..)
 
-    -- ** Construct
-  , numFromInt, numFromInteger, numFromFloat, numFromDouble, numFromScientific
+    -- *** Construct
+  , numFromInt, numFromInteger, numFromFloat, numFromDouble, numFromCoefficientAndExponent
 
-    -- ** Query
+    -- *** Query
   , numSign, numDigits, numFraction, numExponent
 
-    -- ** Convert
+    -- *** Convert
   , numToText, numToRational
 
-    -- * Array
+    -- ** Array
   , Array
 
-    -- * Object
+    -- ** Object
   , Object
 
     -- * Parser
@@ -98,14 +98,14 @@ numFromRealFloat x =
   let
     s = Scientific.fromFloatDigits x
   in
-  numFromScientific (Scientific.coefficient s) (Scientific.base10Exponent s)
+  numFromCoefficientAndExponent (Scientific.coefficient s) (Scientific.base10Exponent s)
 
 
 -- | Construct a t'Number' from a coefficient, @c@, and a base-10 exponent, @e@.
 --
--- The value represented is the 'Fractional' number: @fromInteger c * 10 ^^ e@.
-numFromScientific :: Integer -> Int -> Number
-numFromScientific coefficient base10Exponent =
+-- The value represented is equivalent to the 'Fractional' number: @fromInteger c * 10 ^^ e@.
+numFromCoefficientAndExponent :: Integer -> Int -> Number
+numFromCoefficientAndExponent coefficient base10Exponent =
   let
     sign :: Sign
     absCoefficient :: Integer
@@ -232,7 +232,7 @@ type SyntaxError = ParseErrorBundle Text Void
 
 
 
--- | Render a 'Json' value as 'Text', omitting all whitespace used only for layout.
+-- | Render a 'Json' value as 'Text', omitting any whitespace that's used only for layout.
 compact :: Json -> Text
 compact =
   pretty 0
@@ -253,13 +253,13 @@ pretty numSpaces =
 
 
 
--- | Write the 'compact' rendering of a 'Json' value to a file, UTF-8 encoded.
+-- | Write the 'compact' rendering of a 'Json' value to a UTF-8 encoded file.
 writeCompact :: FilePath -> Json -> IO ()
 writeCompact f =
   writePretty f 0
 
 
--- | Write the 'pretty' rendering of a 'Json' value to a file, UTF-8 encoded.
+-- | Write the 'pretty' rendering of a 'Json' value to a UTF-8 encoded file.
 --
 -- The 'Int' argument is the indentation width; see 'pretty'. A positive width
 -- appends a trailing newline.

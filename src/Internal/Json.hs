@@ -1,4 +1,6 @@
--- | A 'Json' data structure for representing JSON.
+-- | For internal use only.
+--
+-- A data structure for working with JSON values in Haskell.
 module Internal.Json
   ( Json(..)
   , Number(..), Sign(..)
@@ -9,7 +11,7 @@ module Internal.Json
 import Data.Text (Text)
 
 
--- | A JSON <https://www.rfc-editor.org/info/rfc8259/#section-3 value>.
+-- | The representation of a JSON <https://www.rfc-editor.org/info/rfc8259/#section-3 value>.
 data Json
   = Null
   | Boolean Bool
@@ -20,13 +22,13 @@ data Json
   deriving (Eq, Show)
 
 
--- | A JSON <https://www.rfc-editor.org/info/rfc8259/#section-6 number>.
+-- | The representation of a JSON <https://www.rfc-editor.org/info/rfc8259/#section-6 number>.
 data Number
   = Num
       { numSign :: Sign                   -- ^ The sign.
       , numDigits :: Text                 -- ^ The integer part.
-      , numFraction :: Maybe Text         -- ^ The fractional part, if any.
-      , numExponent :: Maybe (Sign, Text) -- ^ The exponent, if any.
+      , numFraction :: Maybe Text         -- ^ The optional fractional part.
+      , numExponent :: Maybe (Sign, Text) -- ^ The optional exponent.
       }
   deriving (Eq, Show)
 
@@ -38,12 +40,11 @@ data Sign
   deriving (Eq, Show)
 
 
--- | A JSON <https://www.rfc-editor.org/info/rfc8259/#section-5 array>.
+-- | The representation of a JSON <https://www.rfc-editor.org/info/rfc8259/#section-5 array>.
 type Array = [Json]
 
 
--- | A JSON <https://www.rfc-editor.org/info/rfc8259/#section-4 object>.
+-- | The representation of a JSON <https://www.rfc-editor.org/info/rfc8259/#section-4 object>.
 --
--- Represented as a list of name/value pairs, preserving insertion order
--- and allowing duplicate keys, as permitted by the RFC.
+-- A list of key/value pairs, preserving insertion order and allowing duplicate keys, as permitted by the RFC.
 type Object = [(Text, Json)]
