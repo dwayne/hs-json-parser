@@ -200,7 +200,7 @@ parseFromFile f = do
   bs <- BS.readFile f
   case TE.decodeUtf8' bs of
     Right content ->
-      return $ first SyntaxError (parse content)
+      return $ first SyntaxError (parseHelper f content)
 
     Left err ->
       return $ Left (EncodingError err)
@@ -208,7 +208,11 @@ parseFromFile f = do
 
 -- | Parse a JSON value from 'Text'.
 parse :: Text -> Either SyntaxError Json
-parse = Megaparsec.parse P.json ""
+parse = parseHelper ""
+
+
+parseHelper :: String -> Text -> Either SyntaxError Json
+parseHelper = Megaparsec.parse P.json
 
 
 
